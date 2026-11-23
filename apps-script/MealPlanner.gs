@@ -129,18 +129,25 @@ function buildMealShoppingList(weekStart) {
   const data=getMealData(weekStart);
   const recipeMap={}; data.recipes.forEach(r=>recipeMap[r.id]=r);
   const totals={};
+  const normalizeUnit = raw => {
+    const u=String(raw||'').trim().toLocaleLowerCase('de-DE').replace(/\./g,'');
+    const map={kg:{unit:'g',factor:1000},g:{unit:'g',factor:1},gramm:{unit:'g',factor:1},l:{unit:'ml',factor:1000},ml:{unit:'ml',factor:1},milliliter:{unit:'ml',factor:1},stück:{unit:'Stück',factor:1},stk:{unit:'Stück',factor:1},el:{unit:'EL',factor:1},esslöffel:{unit:'EL',factor:1},tl:{unit:'TL',factor:1},teelöffel:{unit:'TL',factor:1},prise:{unit:'Prise',factor:1},prisen:{unit:'Prise',factor:1},dose:{unit:'Dose',factor:1},dosen:{unit:'Dose',factor:1},packung:{unit:'Packung',factor:1},packungen:{unit:'Packung',factor:1}};
+    return map[u] || {unit:String(raw||'').trim(),factor:1};
+  };
   data.plan.filter(p=>p.type==='recipe' && recipeMap[p.recipeId]).forEach(p=>{
     const recipe=recipeMap[p.recipeId];
     const factor=(Number(p.servings)||2)/(Number(recipe.servings)||4);
     (recipe.ingredients||[]).forEach(i=>{
       const name=String(i.name||'').trim(); if(!name) return;
-      const key=name.toLocaleLowerCase('de-DE');
-      if(!totals[key]) totals[key]={name,amount:0,unit:String(i.unit||'')};
+      const normalized=normalizeUnit(i.unit);
+      const key=name.toLocaleLowerCase('de-DE')+'|'+normalized.unit.toLocaleLowerCase('de-DE');
       const amount=Number(i.amount);
-      if(Number.isFinite(amount)) totals[key].amount+=amount*factor;
+      if(!Number.isFinite(amount)) { const freeKey=key+'|freitext|'+String(i.unit||''); if(!totals[freeKey]) totals[freeKey]={name,amount:null,unit:String(i.unit||'')}; return; }
+      if(!totals[key]) totals[key]={name,amount:0,unit:normalized.unit};
+      totals[key].amount+=amount*factor*normalized.factor;
     });
   });
-  return Object.values(totals).sort((a,b)=>a.name.localeCompare(b.name,'de'));
+  return Object.values(totals).sort((a,b)=>a.name.localeCompare(b.name,'de') || String(a.unit).localeCompare(String(b.unit),'de'));
 }
 
 function setupMealPlannerTables_(){ setupMealPlannerTables(); }
@@ -210,6 +217,7 @@ function generateAiMealRecipes(options) {
   const payload = {
     model:model,
     store:false,
+    generation_config:{max_output_tokens:12000,thinking_level:"low"},
     input:prompt,
     response_format:{type:'text',mime_type:'application/json',schema:recipeSchema}
   };
