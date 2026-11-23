@@ -32,7 +32,7 @@ function setupMealPlannerTables() {
   return true;
 }
 
-function getMealData(weekStart) {
+function getMealPlannerData(weekStart) {
   setupMealPlannerTables_();
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const recipeSheet = ss.getSheetByName(MEAL_CONFIG.RECIPES);
@@ -126,7 +126,7 @@ function saveMealPlan(entries, weekStart) {
 }
 
 function buildMealShoppingList(weekStart) {
-  const data=getMealData(weekStart);
+  const data=getMealPlannerData(weekStart);
   const recipeMap={}; data.recipes.forEach(r=>recipeMap[r.id]=r);
   const totals={};
   const normalizeUnit = raw => {
