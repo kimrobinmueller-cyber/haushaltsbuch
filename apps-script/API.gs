@@ -48,15 +48,4 @@ function doPost(e) {
   return ContentService.createTextOutput(JSON.stringify(out))
     .setMimeType(ContentService.MimeType.JSON);
 }
-
-// Nur einmal ausführen, falls noch kein API_TOKEN existiert.
-// Ein vorhandenes Token bleibt unverändert.
-function setupApiToken() {
-  const props = PropertiesService.getScriptProperties();
-  let token = props.getProperty('API_TOKEN');
-  if (!token) {
-    token = Utilities.getUuid() + Utilities.getUuid().replace(/-/g, '');
-    props.setProperty('API_TOKEN', token);
-  }
-  Logger.log('API_TOKEN ist eingerichtet. Token nur bei erstmaliger Einrichtung aus dem Protokoll kopieren.');
-}
+\n
