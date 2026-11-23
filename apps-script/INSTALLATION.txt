@@ -21,10 +21,10 @@ DATEIEN UND EINBAU
 2. Die vorhandene Index.html vollständig durch die neue index.html aus diesem Branch ersetzen.
 3. Eine neue Skriptdatei MealPlanner.gs anlegen und den vollständigen Inhalt aus apps-script/MealPlanner.gs einfügen.
 4. Eine neue Skriptdatei API.gs anlegen und den Inhalt aus apps-script/API.gs einfügen.
-5. In der bestehenden Code.gs ausschließlich den bisherigen API-Abschnitt entfernen: die Funktionen apiFunctions_(), doPost() und setupApiToken(). Alle übrigen Funktionen – insbesondere getInitData(), Buchungen, Gemini/Kassenbon und der alte Essensplaner – bleiben unverändert.
+5. In der bestehenden Code.gs ausschließlich den bisherigen API-Abschnitt entfernen: die Funktionen apiFunctions_() und doPost(). Die vorhandene Funktion setupApiToken() bleibt in Code.gs bestehen. Alle übrigen Funktionen – insbesondere getInitData(), Buchungen, Gemini/Kassenbon und der alte Essensplaner – bleiben unverändert.
 6. Die bestehende Code.gs NICHT vollständig ersetzen.
 7. Die neue API.gs stellt die zentrale API bereit und enthält auch die neuen Funktionen des Meal Planners. Es darf nur eine Definition von doPost() und apiFunctions_() im gesamten Apps-Script-Projekt geben.
-8. Die bestehende Script-Property API_TOKEN beibehalten. setupApiToken() bei bestehendem Token nicht erneut ausführen.
+8. Die bestehende Script-Property API_TOKEN beibehalten. setupApiToken() bleibt in Code.gs und darf bei vorhandenem Token nicht erneut ausgeführt werden.
 9. Speichern. Erst nach erfolgreichem Test die Apps-Script-Web-App als neue Version bereitstellen. Die bisherigen Zugriffseinstellungen beibehalten.
 10. Beide Smartphones neu laden. Wenn noch die alte Oberfläche erscheint, den Browser-Tab schließen und erneut öffnen.
 
