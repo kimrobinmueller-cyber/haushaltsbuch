@@ -422,102 +422,7 @@ nav span {
 <main>
 
 <!-- DASHBOARD -->
-<section id="dashboard" class="page">
 
-  <div class="row" style="margin:5px 0 14px">
-    <strong>Monatsübersicht</strong>
-    <div style="display:flex;align-items:center;gap:7px">
-      <button class="secondary" type="button"
-              style="padding:9px 11px" onclick="loadData()"
-              aria-label="Daten aktualisieren">↻</button>
-      <input type="month" id="dashMonth"
-             style="width:145px" onchange="changeMonth()">
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="label">Variable Ausgaben</div>
-    <div class="big" id="total">0,00 €</div>
-
-    <div class="grid">
-      <div>
-        <div class="label">Monatsbudget</div>
-        <strong id="budget">0,00 €</strong>
-      </div>
-
-      <div>
-        <div class="label">Noch verfügbar</div>
-        <strong class="green" id="remaining">0,00 €</strong>
-      </div>
-    </div>
-
-    <div style="margin:17px 0 7px" class="row">
-      <span class="small">Budgetverbrauch</span>
-      <strong id="percent">0 %</strong>
-    </div>
-
-    <div class="progress">
-      <div id="progress" style="width:0%"></div>
-    </div>
-  </div>
-
-  <div class="card comparison-card">
-    <div class="label">Monatsvergleich</div>
-    <strong>Ausgaben im Vergleich zum Vormonat</strong>
-
-    <div class="comparison-values">
-      <div>
-        <div class="label" id="compareCurrentLabel">
-          Aktueller Monat
-        </div>
-        <div class="comparison-number" id="compareCurrent">
-          0,00 €
-        </div>
-      </div>
-
-      <div class="comparison-arrow">↔</div>
-
-      <div>
-        <div class="label" id="comparePreviousLabel">
-          Vormonat
-        </div>
-        <div class="comparison-number" id="comparePrevious">
-          0,00 €
-        </div>
-      </div>
-    </div>
-
-    <div id="compareChange" class="comparison-change neutral">
-      Noch kein Vergleich möglich
-    </div>
-
-    <div class="small" id="compareHint" style="margin-top:8px">
-      Verglichen werden die gebuchten variablen Ausgaben.
-    </div>
-  </div>
-
-  <div class="grid">
-    <button class="full" onclick="showPage('entry')">
-      ＋ Ausgabe erfassen
-    </button>
-
-    <button class="full secondary"
-            onclick="showPage('transactions')">
-      Buchungen ansehen
-    </button>
-  </div>
-
-  <div class="card" style="margin-top:15px">
-    <strong>Ausgaben nach Kategorien</strong>
-    <div id="categories"></div>
-  </div>
-
-  <div class="card">
-    <strong>Letzte Buchungen</strong>
-    <div id="recent"></div>
-  </div>
-
-</section>
 
 <!-- BELEGERFASSUNG -->
 <section id="receipt" class="page active">
@@ -763,6 +668,100 @@ nav span {
   <div class="card">
     <strong>Letzte Einkäufe</strong>
     <div id="shoppingHistoryStats" class="small">Wird geladen …</div>
+  </div>
+
+
+  <div class="row" style="margin:5px 0 14px">
+    <strong>Monatsübersicht</strong>
+    <div style="display:flex;align-items:center;gap:7px">
+      <button class="secondary" type="button"
+              style="padding:9px 11px" onclick="loadData()"
+              aria-label="Daten aktualisieren">↻</button>
+      <input type="month" id="dashMonth"
+             style="width:145px" onchange="changeMonth()">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Variable Ausgaben</div>
+    <div class="big" id="total">0,00 €</div>
+
+    <div class="grid">
+      <div>
+        <div class="label">Monatsbudget</div>
+        <strong id="budget">0,00 €</strong>
+      </div>
+
+      <div>
+        <div class="label">Noch verfügbar</div>
+        <strong class="green" id="remaining">0,00 €</strong>
+      </div>
+    </div>
+
+    <div style="margin:17px 0 7px" class="row">
+      <span class="small">Budgetverbrauch</span>
+      <strong id="percent">0 %</strong>
+    </div>
+
+    <div class="progress">
+      <div id="progress" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="card comparison-card">
+    <div class="label">Monatsvergleich</div>
+    <strong>Ausgaben im Vergleich zum Vormonat</strong>
+
+    <div class="comparison-values">
+      <div>
+        <div class="label" id="compareCurrentLabel">
+          Aktueller Monat
+        </div>
+        <div class="comparison-number" id="compareCurrent">
+          0,00 €
+        </div>
+      </div>
+
+      <div class="comparison-arrow">↔</div>
+
+      <div>
+        <div class="label" id="comparePreviousLabel">
+          Vormonat
+        </div>
+        <div class="comparison-number" id="comparePrevious">
+          0,00 €
+        </div>
+      </div>
+    </div>
+
+    <div id="compareChange" class="comparison-change neutral">
+      Noch kein Vergleich möglich
+    </div>
+
+    <div class="small" id="compareHint" style="margin-top:8px">
+      Verglichen werden die gebuchten variablen Ausgaben.
+    </div>
+  </div>
+
+  <div class="grid">
+    <button class="full" onclick="showPage('entry')">
+      ＋ Ausgabe erfassen
+    </button>
+
+    <button class="full secondary"
+            onclick="showPage('transactions')">
+      Buchungen ansehen
+    </button>
+  </div>
+
+  <div class="card" style="margin-top:15px">
+    <strong>Ausgaben nach Kategorien</strong>
+    <div id="categories"></div>
+  </div>
+
+  <div class="card">
+    <strong>Letzte Buchungen</strong>
+    <div id="recent"></div>
   </div>
 </section>
 
