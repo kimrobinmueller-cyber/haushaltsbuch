@@ -397,6 +397,18 @@ nav span {
   .comparison-values { gap:6px; }
 }
 
+/* KI-Essensplanung */
+
+.meal-ai-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px}
+.meal-ai-results{display:grid;gap:9px;margin-top:12px}
+.meal-ai-card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fbfdff}
+.meal-ai-card strong{font-size:14px}
+.meal-ai-card p{font-size:12px;color:var(--muted);line-height:1.4;margin:6px 0}
+.meal-ai-card ul{font-size:12px;padding-left:18px;margin:7px 0}
+.meal-ai-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.meal-ai-actions button{flex:1;min-width:150px}
+.meal-ai-tag{display:inline-block;background:#eaf4f8;color:#075e70;border-radius:20px;padding:3px 8px;font-size:11px;margin:2px 4px 2px 0}
+
 /* Essensplaner */
 .meal-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.meal-days{display:grid;grid-template-columns:repeat(7,minmax(180px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px;touch-action:pan-x pan-y}.meal-day{background:#f8fbfd;border:1px solid var(--line);border-radius:14px;padding:10px;min-height:250px;min-width:180px}.meal-day h3{margin:0 0 8px;font-size:14px}.meal-slot{border:1px dashed #b9cbd5;border-radius:10px;padding:8px;margin:7px 0;min-height:54px;background:#fff}.meal-slot.over{background:#e8f6f5;border-color:#087f8c}.meal-slot-title{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px}.meal-chip{background:#eaf4f8;border:1px solid #cfe2eb;border-radius:9px;padding:8px;margin:5px 0;font-size:12px;cursor:grab;user-select:none;touch-action:none}.meal-chip.placeholder{background:#fff5e8;border-color:#f0d4a8}.meal-chip.dragging{opacity:.45}.meal-library{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}.meal-result{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;display:flex;gap:9px;align-items:center;touch-action:none}.meal-result img{width:52px;height:52px;object-fit:cover;border-radius:8px}.meal-result .meal-meta{min-width:0;flex:1}.meal-result strong{display:block;font-size:13px}.meal-result small{color:var(--muted)}.meal-drop-hint{font-size:11px;color:var(--muted)}.meal-touch-ghost{position:fixed;z-index:9999;pointer-events:none;opacity:.9;max-width:220px;box-shadow:0 8px 25px #0003}.meal-week-nav{display:flex;gap:8px;align-items:center}.meal-week-nav input{max-width:155px}@media(max-width:700px){.meal-days{grid-template-columns:repeat(7,minmax(78vw,1fr));scroll-snap-type:x proximity}.meal-day{scroll-snap-align:start;min-width:0}.meal-library{grid-template-columns:1fr}.meal-result{min-height:68px}.meal-toolbar button{padding:10px}}
 
@@ -566,6 +578,25 @@ nav span {
     <div id="mealWeekGrid" class="meal-days"></div>
   </div>
   <div class="card">
+
+  <div class="card" id="mealAiCard">
+    <div class="row"><strong>KI-Essensplanung</strong><span class="meal-ai-tag">Gemini</span></div>
+    <p class="small">Lass dir einzelne Gerichte oder einen kompletten Wochenplan mit Rezepten und konkreten Zutatenmengen erstellen. Die Rezepte werden gespeichert und können in den Wochenplan übernommen werden.</p>
+    <div class="meal-ai-grid">
+      <div><label for="mealAiServings">Portionen je Gericht</label><input type="number" id="mealAiServings" min="1" max="10" value="4"></div>
+      <div><label for="mealAiPreferences">Wünsche (optional)</label><input id="mealAiPreferences" value="preiswert, familienfreundlich, alltagstauglich, saisonal" placeholder="z. B. vegetarisch, unter 30 Minuten"></div>
+      <div><label for="mealAiDay">Tag für Einzelvorschläge</label><select id="mealAiDay"><option value="0">Montag</option><option value="1">Dienstag</option><option value="2">Mittwoch</option><option value="3">Donnerstag</option><option value="4">Freitag</option><option value="5">Samstag</option><option value="6">Sonntag</option></select></div>
+      <div><label for="mealAiMeal">Mahlzeit für Einzelvorschläge</label><select id="mealAiMeal"><option>Frühstück</option><option>Mittagessen</option><option>Abendessen</option></select></div>
+    </div>
+    <div class="meal-ai-actions">
+      <button type="button" id="mealAiSingleButton" onclick="generateMealAiSingle()">3 Gerichte vorschlagen</button>
+      <button type="button" class="secondary" id="mealAiWeekButton" onclick="generateMealAiWeek()">Komplette Woche planen (21 Gerichte)</button>
+    </div>
+    <div id="mealAiStatus" class="status"></div>
+    <div id="mealAiResults" class="meal-ai-results"></div>
+    <p class="small">Hinweis: KI-Rezepte und Kosten sind Vorschläge bzw. Schätzungen. Bitte Mengen und Allergene vor dem Einkauf prüfen. Für die KI-Funktion muss einmalig ein Gemini-API-Schlüssel im Apps-Script-Projekt hinterlegt werden.</p>
+  </div>
+
     <strong>Rezeptdatenbank</strong>
     <div class="meal-toolbar" style="margin-top:10px"><input id="mealSearch" placeholder="Gericht oder Zutat suchen" style="flex:1;min-width:160px"><button type="button" onclick="searchMealLibrary()">Suchen</button></div>
     <div id="mealSearchStatus" class="small"></div>
@@ -1630,13 +1661,86 @@ function mealPointerMove(e){if(!mealDrag)return;const dx=e.clientX-mealDrag.star
 function mealPointerEnd(e){document.removeEventListener('pointermove',mealPointerMove);if(!mealDrag)return;const el=document.elementFromPoint(e.clientX,e.clientY);const slot=el&&el.closest('.meal-slot');if(slot&&mealDrag.moved){mealSuppressClick=true;setTimeout(()=>mealSuppressClick=false,300);mealMoveEntry(mealDrag.id,slot.dataset.date,slot.dataset.meal);}if(mealDrag.source)mealDrag.source.classList.remove('dragging');if(mealDrag.ghost&&mealDrag.ghost.parentNode)mealDrag.ghost.remove();document.querySelectorAll('.meal-slot.over').forEach(x=>x.classList.remove('over'));mealDrag=null;}
 function mealDrop(e){/* handled by pointerup document listener */}
 function mealMoveEntry(id,date,meal){const item=mealData.plan.find(x=>x.id===id);if(!item)return;item.date=date;item.meal=meal;item.position=(mealData.plan.filter(x=>x.date===date&&x.meal===meal).length)+1;renderMealWeek();showMessage('mealWeekStatus','Gericht verschoben. Bitte Wochenplan speichern.','ok');}
-function mealAddToPlan(recipe,date,meal){const entry={id:'local-'+Date.now()+'-'+Math.random().toString(16).slice(2),date,meal,position:mealData.plan.filter(x=>x.date===date&&x.meal===meal).length,type:'recipe',recipeId:recipe.id||'',title:recipe.title,audience:'Alle',servings:2,note:''};mealData.plan.push(entry);renderMealWeek();}
+function mealAddToPlan(recipe,date,meal){const entry={id:'local-'+Date.now()+'-'+Math.random().toString(16).slice(2),date,meal,position:mealData.plan.filter(x=>x.date===date&&x.meal===meal).length,type:'recipe',recipeId:recipe.id||'',title:recipe.title,audience:'Alle',servings:Number(recipe.servings)||4,note:''};mealData.plan.push(entry);renderMealWeek();}
 function searchMealLibrary(){const q=document.getElementById('mealSearch').value;showMessage('mealSearchStatus','Suche …','');google.script.run.withSuccessHandler(r=>{const root=document.getElementById('mealRecipeResults');root.innerHTML='';const all=[...(r.local||[]),...(r.external||[])];if(!all.length){root.textContent='Keine Treffer gefunden.';return;}all.forEach(recipe=>{const card=document.createElement('div');card.className='meal-result';const img=recipe.image?'<img src="'+escapeHtml(recipe.image)+'" alt="">':'';card.innerHTML=img+'<div class="meal-meta"><strong>'+escapeHtml(recipe.title)+'</strong><small>'+escapeHtml(recipe.category||recipe.cuisine||recipe.source||'Rezept')+'</small></div><button type="button" class="secondary">'+(recipe.sourceId?'Import':'＋')+'</button>';const btn=card.querySelector('button');btn.addEventListener('click',()=>{if(recipe.id){const day=mealData.weekStart||document.getElementById('mealWeekStart').value;mealAddToPlan(recipe,day,'Abendessen');}else if(recipe.sourceId){google.script.run.withSuccessHandler(()=>{showMessage('mealSearchStatus','Rezept importiert.','ok');loadMealWeek();}).withFailureHandler(e=>showMessage('mealSearchStatus',e.message||String(e),'error')).importMealRecipe(recipe.sourceId);}else{const day=mealData.weekStart||document.getElementById('mealWeekStart').value;mealAddToPlan(recipe,day,'Abendessen');}});card.addEventListener('pointerdown',e=>mealLibraryPointerDown(e,recipe));root.appendChild(card);});showMessage('mealSearchStatus',all.length+' Treffer. Importierte Rezepte erscheinen danach im Wochenplan.','ok');}).withFailureHandler(e=>showMessage('mealSearchStatus',e.message||String(e),'error')).searchMealRecipes(q,'');}
 function mealLibraryPointerDown(e,recipe){if(e.target.closest('button'))return;const startX=e.clientX,startY=e.clientY;let moved=false;const move=ev=>{if(Math.abs(ev.clientX-startX)+Math.abs(ev.clientY-startY)>10)moved=true;};const end=ev=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);if(!moved)return;const el=document.elementFromPoint(ev.clientX,ev.clientY);const slot=el&&el.closest('.meal-slot');if(slot){if(recipe.sourceId&&!recipe.id){google.script.run.withSuccessHandler(r=>{mealData.recipes.push({...recipe,id:r.recipeId});mealAddToPlan({...recipe,id:r.recipeId},slot.dataset.date,slot.dataset.meal);}).withFailureHandler(err=>showMessage('mealSearchStatus',err.message||String(err),'error')).importMealRecipe(recipe.sourceId);}else{mealAddToPlan(recipe,slot.dataset.date,slot.dataset.meal);}}};document.addEventListener('pointermove',move,{passive:true});document.addEventListener('pointerup',end,{once:true});}
 function saveMealWeek(){const start=document.getElementById('mealWeekStart').value;google.script.run.withSuccessHandler(()=>{showMessage('mealWeekStatus','Wochenplan gespeichert und synchronisiert.','ok');loadMealWeek();}).withFailureHandler(e=>showMessage('mealWeekStatus',e.message||String(e),'error')).saveMealPlan(mealData.plan,start);}
 function saveOwnMealFromForm(){const title=document.getElementById('ownMealTitle').value.trim();if(!title){showMessage('mealSearchStatus','Bitte einen Rezeptnamen eingeben.','error');return;}const ingredients=document.getElementById('ownMealIngredients').value.split('\n').map(line=>line.trim()).filter(Boolean).map(line=>{const m=line.match(/^([\d.,]+)\s*(\S+)?\s+(.+)$/);return m?{amount:Number(m[1].replace(',','.')),unit:m[2]||'',name:m[3]}:{amount:null,unit:'',name:line};});const payload={title,category:document.getElementById('ownMealCategory').value,servings:Number(document.getElementById('ownMealServings').value)||4,ingredients,instructions:document.getElementById('ownMealInstructions').value};google.script.run.withSuccessHandler(()=>{document.getElementById('ownMealTitle').value='';document.getElementById('ownMealIngredients').value='';document.getElementById('ownMealInstructions').value='';showMessage('mealSearchStatus','Eigenes Rezept gespeichert.','ok');loadMealWeek();}).withFailureHandler(e=>showMessage('mealSearchStatus',e.message||String(e),'error')).saveOwnMealRecipe(payload);}
 function showMealShoppingList(){const start=document.getElementById('mealWeekStart').value||mealLocalMonday(new Date());google.script.run.withSuccessHandler(items=>{const root=document.getElementById('mealShoppingItems');root.innerHTML='';if(!items.length){root.textContent='Noch keine Zutaten aus Rezepten geplant.';return;}google.script.run.withSuccessHandler(checks=>{items.forEach(i=>{const row=document.createElement('label');row.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-weight:400;margin:0';const cb=document.createElement('input');cb.type='checkbox';const key=String(i.name).toLocaleLowerCase('de-DE').replace(/\s+/g,' ');cb.checked=!!checks[key];cb.style.cssText='width:20px;height:20px;flex:0 0 auto';const txt=document.createElement('span');txt.textContent=i.name+(i.amount?' · '+Number(i.amount.toFixed(2)):'')+(i.unit?' '+i.unit:'');const apply=()=>{txt.style.textDecoration=cb.checked?'line-through':'none';txt.style.opacity=cb.checked?'.55':'1';};apply();cb.addEventListener('change',()=>{apply();google.script.run.withFailureHandler(e=>showMessage('shoppingStatus',e.message||String(e),'error')).saveMealShoppingCheck(start,i.name,cb.checked);});row.append(cb,txt);root.appendChild(row);});}).withFailureHandler(e=>showMessage('shoppingStatus',e.message||String(e),'error')).getMealShoppingChecklist(start);}).withFailureHandler(e=>showMessage('shoppingStatus',e.message||String(e),'error')).buildMealShoppingList(start);}
 
+
+
+let mealAiSuggestions=[];
+let mealAiMode='';
+function mealAiSetBusy(busy){['mealAiSingleButton','mealAiWeekButton'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=busy;});}
+function mealAiRun(mode){
+  const start=document.getElementById('mealWeekStart').value||mealLocalMonday(new Date());
+  const options={
+    mode:mode,weekStart:start,
+    dayIndex:Number(document.getElementById('mealAiDay').value)||0,
+    mealType:document.getElementById('mealAiMeal').value,
+    servings:Math.max(1,Math.min(10,Number(document.getElementById('mealAiServings').value)||4)),
+    preferences:String(document.getElementById('mealAiPreferences').value||'').slice(0,500)
+  };
+  mealAiMode=mode;
+  mealAiSuggestions=[];
+  document.getElementById('mealAiResults').innerHTML='';
+  mealAiSetBusy(true);
+  showMessage('mealAiStatus',mode==='week'?'Die KI erstellt 21 Rezepte für Frühstück, Mittag- und Abendessen. Das kann einen Moment dauern …':'Die KI erstellt drei passende Rezeptvorschläge …','');
+  google.script.run.withSuccessHandler(result=>{
+    mealAiSetBusy(false);
+    mealAiSuggestions=(result&&result.recipes)||[];
+    if(!mealAiSuggestions.length){showMessage('mealAiStatus','Es wurden keine Rezepte zurückgegeben. Bitte erneut versuchen.','error');return;}
+    renderMealAiSuggestions();
+    showMessage('mealAiStatus',mode==='week'?'21 Rezeptvorschläge wurden erstellt und in der Rezeptdatenbank gespeichert. Prüfe sie und übernimm sie bei Bedarf in den Wochenplan.':mealAiSuggestions.length+' Rezeptvorschläge wurden erstellt und gespeichert.','ok');
+  }).withFailureHandler(error=>{
+    mealAiSetBusy(false);
+    showMessage('mealAiStatus',error&&error.message?error.message:String(error),'error');
+  }).generateAiMealRecipes(options);
+}
+function generateMealAiSingle(){mealAiRun('single');}
+function generateMealAiWeek(){if(!confirm('Die KI soll 21 Gerichte für die ausgewählte Woche erstellen. Fortfahren?'))return;mealAiRun('week');}
+function renderMealAiSuggestions(){
+  const root=document.getElementById('mealAiResults');root.innerHTML='';
+  if(mealAiMode==='week'){
+    const intro=document.createElement('div');intro.className='small';intro.textContent='Vorschau für die ausgewählte Woche. Bestehende Einträge werden erst ersetzt, wenn du den kompletten Plan ausdrücklich übernimmst.';root.appendChild(intro);
+  }
+  mealAiSuggestions.forEach((r,index)=>{
+    const card=document.createElement('div');card.className='meal-ai-card';
+    const day=mealNames[Number(r.dayIndex)||0]||'Tag';
+    const meta=(r.mealType||'')+' · '+(Number(r.prepMinutes)||0)+' Min. · ca. '+money(r.estimatedCostEur||0);
+    const ingredientText=(r.ingredients||[]).slice(0,10).map(i=>(i.amount!==null&&i.amount!==undefined?i.amount+' ':'')+(i.unit?i.unit+' ':'')+i.name).join(', ');
+    card.innerHTML='<div class="row"><strong>'+escapeHtml(mealAiMode==='week'?day+' · '+(r.mealType||''):r.title)+'</strong><span class="meal-ai-tag">'+escapeHtml(meta)+'</span></div><p><b>'+escapeHtml(r.title)+'</b></p><p>'+escapeHtml(ingredientText)+'</p><details><summary class="small">Zubereitung anzeigen</summary><p>'+escapeHtml(r.instructions||'')+'</p></details>';
+    if(mealAiMode==='single'){
+      const btn=document.createElement('button');btn.type='button';btn.className='secondary';btn.textContent='Für diesen Tag eintragen';btn.style.marginTop='9px';btn.addEventListener('click',()=>mealAiAddSingle(index));card.appendChild(btn);
+    }
+    root.appendChild(card);
+  });
+  if(mealAiMode==='week'){
+    const btn=document.createElement('button');btn.type='button';btn.className='full';btn.textContent='Alle 21 Gerichte in den Wochenplan übernehmen';btn.addEventListener('click',mealAiApplyWeek);root.appendChild(btn);
+  }
+}
+function mealAiAddSingle(index){
+  const recipe=mealAiSuggestions[index];if(!recipe)return;
+  const start=document.getElementById('mealWeekStart').value||mealLocalMonday(new Date());
+  const dayIndex=Number(document.getElementById('mealAiDay').value)||0;
+  const date=mealDateOffset(start,dayIndex);
+  mealAddToPlan(recipe,date,document.getElementById('mealAiMeal').value);
+  showMessage('mealWeekStatus','Gericht zum Wochenplan hinzugefügt. Bitte Wochenplan speichern.','ok');
+}
+function mealAiApplyWeek(){
+  if(mealAiSuggestions.length!==21){showMessage('mealAiStatus','Der Wochenplan ist unvollständig und kann nicht übernommen werden.','error');return;}
+  if(!confirm('Achtung: Alle bisherigen Einträge dieser Woche werden durch die 21 KI-Gerichte ersetzt. Wirklich übernehmen?'))return;
+  const start=document.getElementById('mealWeekStart').value||mealLocalMonday(new Date());
+  mealData.weekStart=start;
+  mealData.plan=mealAiSuggestions.map((r,index)=>({
+    id:'ai-'+Date.now()+'-'+index,date:mealDateOffset(start,Number(r.dayIndex)||0),
+    meal:r.mealType,position:0,type:'recipe',recipeId:r.id,title:r.title,
+    audience:'Alle',servings:Number(r.servings)||4,note:'KI-Rezept'
+  }));
+  saveMealWeek();
+  showMessage('mealAiStatus','Der KI-Wochenplan wurde in den Wochenplan übernommen.','ok');
+}
 
 function addMealPlaceholder(date,meal){const title=prompt('Platzhalter für '+meal+' (z. B. Auswärts essen, Reste, bei Oma und Opa):','Auswärts essen');if(!title)return;const audience=prompt('Für wen? Alle, Kind oder Erwachsene','Alle')||'Alle';mealData.plan.push({id:'local-'+Date.now()+'-'+Math.random().toString(16).slice(2),date,meal,position:mealData.plan.filter(x=>x.date===date&&x.meal===meal).length,type:'placeholder',recipeId:'',title,audience,servings:2,note:''});renderMealWeek();showMessage('mealWeekStatus','Platzhalter ergänzt. Bitte Wochenplan speichern.','ok');}
 function editMealEntry(id){const item=mealData.plan.find(x=>x.id===id);if(!item)return;const audience=prompt('Zielgruppe: Alle, Kind oder Erwachsene',item.audience||'Alle');if(audience===null)return;item.audience=['Alle','Kind','Erwachsene'].includes(audience)?audience:'Alle';const servings=prompt('Portionen',String(item.servings||2));if(servings!==null&&Number(servings)>0)item.servings=Number(servings);if(confirm('Diesen Eintrag löschen?'))mealData.plan=mealData.plan.filter(x=>x.id!==id);renderMealWeek();showMessage('mealWeekStatus','Eintrag geändert. Bitte Wochenplan speichern.','ok');}
