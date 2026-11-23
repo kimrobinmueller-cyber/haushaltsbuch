@@ -34,3 +34,14 @@ WICHTIGE HINWEISE
 - Die Einkaufsanalyse benötigt bereits erfasste Einkaufsbons/Produktpositionen. Bei zu wenigen Daten wird ein entsprechender Hinweis angezeigt.
 - Importierte TheMealDB-Rezepte liefern Mengen teils als Freitext; solche Zutaten können in der Einkaufsliste ohne genaue Mengenangabe erscheinen.
 - Der Quellcode wurde auf JavaScript-Syntax und die fünf getrennten Seiten geprüft. Eine Live-Prüfung in deinem Apps-Script-Konto kann ich ohne Zugriff auf dein Projekt nicht durchführen.
+
+KI-ESSENSPLANUNG (NEU)
+1. Die KI-Rezeptgenerierung verwendet die Gemini Interactions API von Google. Sie funktioniert nur innerhalb der Apps-Script-Web-App, nicht in einer statischen GitHub-Pages-Vorschau.
+2. Im Google AI Studio einen Gemini-API-Schlüssel für ein Google-Projekt erstellen. Der API-Schlüssel wird NICHT in HTML, GitHub oder ChatGPT eingetragen.
+3. Im Apps-Script-Editor: Projekteinstellungen → Script Properties → Script-Property hinzufügen: GEMINI_API_KEY = dein persönlicher Gemini-API-Schlüssel.
+4. Optional kann eine andere unterstützte Modell-ID als Script-Property GEMINI_MODEL hinterlegt werden. Standard ist gemini-3.8-flash.
+5. In Apps Script die Datei MealPlanner.gs mit der aktuellen Version aktualisieren, speichern und die Web-App über Bereitstellen → Bereitstellungen verwalten → Bearbeiten → Neue Version aktualisieren.
+6. In der App unter Essensplanung den Bereich KI-Essensplanung verwenden. Einzelvorschläge erzeugen drei Rezepte für die ausgewählte Mahlzeit; der Wochenplan erzeugt 21 Rezepte (7 Tage × Frühstück, Mittag- und Abendessen).
+7. Die KI speichert ihre Rezepte in Rezepte. Ein kompletter KI-Wochenplan wird erst nach ausdrücklicher Bestätigung in Wochenplan übernommen. Bestehende Einträge dieser Woche werden dabei ersetzt; andere Wochen bleiben unberührt.
+8. Die Zutaten der übernommenen Rezepte fließen in die gemeinsame Einkaufsliste ein. Gramm/Kilogramm und Milliliter/Liter werden beim Addieren umgerechnet; unterschiedliche Einheiten bleiben getrennt.
+9. Gemini API-Nutzung kann je nach Google-Konto, Modell und Verbrauch kostenpflichtig sein. Kosten in der App sind grobe KI-Schätzungen und keine Live-Preise. Zutaten, Allergene und Mengen bitte vor dem Einkauf prüfen.
