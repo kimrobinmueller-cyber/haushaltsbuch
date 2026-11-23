@@ -3,7 +3,7 @@
 // Zentrale API für GitHub Pages / Web-App.
 // Voraussetzung: Code.gs und MealPlanner.gs sind im selben Projekt.
 // In Code.gs müssen die bisherigen Definitionen von apiFunctions_(),
-// doPost() und setupApiToken() entfernt werden, damit nichts doppelt ist.
+// doPost() entfernt werden, damit nichts doppelt ist.
 // ================================================================
 
 function apiFunctions_() {
