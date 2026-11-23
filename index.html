@@ -392,6 +392,14 @@ nav span {
   color:#526779;
 }
 
+/* Jahresdiagramm: mobil als gut lesbare Liste */
+.year-chart-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-top:18px; }
+.year-chart-month { min-width:0; text-align:center; }
+.year-chart-track { height:125px; display:flex; align-items:flex-end; background:#f0f3f7; border-radius:8px; overflow:hidden; }
+.year-chart-fill { width:100%; height:var(--month-pct); background:linear-gradient(180deg,#2477c5,#087f8c); border-radius:8px 8px 0 0; }
+.year-chart-label { display:block; margin-top:6px; }
+.year-chart-value { font-size:10px; color:var(--muted); overflow-wrap:anywhere; }
+
 @media(max-width:380px) {
   .comparison-number { font-size:18px; }
   .comparison-values { gap:6px; }
@@ -410,7 +418,64 @@ nav span {
 .meal-ai-tag{display:inline-block;background:#eaf4f8;color:#075e70;border-radius:20px;padding:3px 8px;font-size:11px;margin:2px 4px 2px 0}
 
 /* Essensplaner */
-.meal-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.meal-days{display:grid;grid-template-columns:repeat(7,minmax(180px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px;touch-action:pan-x pan-y}.meal-day{background:#f8fbfd;border:1px solid var(--line);border-radius:14px;padding:10px;min-height:250px;min-width:180px}.meal-day h3{margin:0 0 8px;font-size:14px}.meal-slot{border:1px dashed #b9cbd5;border-radius:10px;padding:8px;margin:7px 0;min-height:54px;background:#fff}.meal-slot.over{background:#e8f6f5;border-color:#087f8c}.meal-slot-title{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px}.meal-chip{background:#eaf4f8;border:1px solid #cfe2eb;border-radius:9px;padding:8px;margin:5px 0;font-size:12px;cursor:grab;user-select:none;touch-action:none}.meal-chip.placeholder{background:#fff5e8;border-color:#f0d4a8}.meal-chip.dragging{opacity:.45}.meal-library{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}.meal-result{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;display:flex;gap:9px;align-items:center;touch-action:none}.meal-result img{width:52px;height:52px;object-fit:cover;border-radius:8px}.meal-result .meal-meta{min-width:0;flex:1}.meal-result strong{display:block;font-size:13px}.meal-result small{color:var(--muted)}.meal-drop-hint{font-size:11px;color:var(--muted)}.meal-touch-ghost{position:fixed;z-index:9999;pointer-events:none;opacity:.9;max-width:220px;box-shadow:0 8px 25px #0003}.meal-week-nav{display:flex;gap:8px;align-items:center}.meal-week-nav input{max-width:155px}@media(max-width:700px){.meal-days{grid-template-columns:repeat(7,minmax(78vw,1fr));scroll-snap-type:x proximity}.meal-day{scroll-snap-align:start;min-width:0}.meal-library{grid-template-columns:1fr}.meal-result{min-height:68px}.meal-toolbar button{padding:10px}}
+.meal-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.meal-days{display:grid;grid-template-columns:repeat(7,minmax(180px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px;touch-action:pan-x pan-y}.meal-day{background:#f8fbfd;border:1px solid var(--line);border-radius:14px;padding:10px;min-height:250px;min-width:180px}.meal-day h3{margin:0 0 8px;font-size:14px}.meal-slot{border:1px dashed #b9cbd5;border-radius:10px;padding:8px;margin:7px 0;min-height:54px;background:#fff}.meal-slot.over{background:#e8f6f5;border-color:#087f8c}.meal-slot-title{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px}.meal-chip{background:#eaf4f8;border:1px solid #cfe2eb;border-radius:9px;padding:8px;margin:5px 0;font-size:12px;cursor:grab;user-select:none;touch-action:none}.meal-chip.placeholder{background:#fff5e8;border-color:#f0d4a8}.meal-chip.dragging{opacity:.45}.meal-library{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}.meal-result{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;display:flex;gap:9px;align-items:center;touch-action:none}.meal-result img{width:52px;height:52px;object-fit:cover;border-radius:8px}.meal-result .meal-meta{min-width:0;flex:1}.meal-result strong{display:block;font-size:13px}.meal-result small{color:var(--muted)}.meal-drop-hint{font-size:11px;color:var(--muted)}.meal-touch-ghost{position:fixed;z-index:9999;pointer-events:none;opacity:.9;max-width:220px;box-shadow:0 8px 25px #0003}.meal-week-nav{display:flex;gap:8px;align-items:center;min-width:0}.meal-week-nav input{max-width:155px;min-width:0}
+
+/* Smartphone-Layout: kein horizontales Verrutschen der gesamten App */
+html,body { width:100%; max-width:100%; overflow-x:hidden; }
+main { width:100%; }
+.card, .page, section, .row > *, .grid > * { min-width:0; }
+img, input, select, textarea, button { max-width:100%; }
+textarea { width:100%; padding:12px; border:1px solid #dce3dd; border-radius:10px; font:inherit; font-size:16px; color:var(--text); }
+button { min-height:44px; touch-action:manipulation; }
+nav { padding:7px 4px calc(7px + env(safe-area-inset-bottom)); }
+nav button { min-width:0; line-height:1.15; overflow-wrap:anywhere; white-space:normal; font-size:clamp(9px,2.5vw,11px); }
+nav span { font-size:19px; }
+body { padding-bottom:calc(78px + env(safe-area-inset-bottom)); }
+
+@media(max-width:700px) {
+  header { padding:14px 14px 12px; }
+  header h1 { font-size:20px; }
+  main { padding:10px 10px calc(12px + env(safe-area-inset-bottom)); }
+  .card { padding:14px; margin-bottom:11px; border-radius:15px; }
+  .big { font-size:27px; }
+  .grid, .meal-ai-grid { grid-template-columns:minmax(0,1fr); }
+  .comparison-values { grid-template-columns:minmax(0,1fr); gap:7px; }
+  .comparison-arrow { display:none; }
+  .comparison-number { font-size:20px; }
+  .meal-toolbar { flex-direction:column; align-items:stretch; }
+  .meal-toolbar > * { width:100%; }
+  .meal-week-nav { width:100%; }
+  .meal-week-nav input { flex:1; max-width:none; }
+  .meal-days { grid-template-columns:minmax(0,1fr); overflow:visible; gap:9px; padding-bottom:0; }
+  .meal-day { min-width:0; min-height:0; }
+  .meal-library { grid-template-columns:minmax(0,1fr); }
+  .meal-result { min-height:68px; }
+  .meal-ai-actions { flex-direction:column; }
+  .meal-ai-actions button { width:100%; min-width:0; }
+  .shopping-item { grid-template-columns:minmax(0,1fr) 68px 78px; }
+  .shopping-item input,.shopping-item select { min-width:0; }
+  .transaction { align-items:flex-start; gap:8px; }
+  .amount { font-size:13px; }
+  .actions { flex-wrap:wrap; }
+  .modal { padding:8px; }
+  .modal-content { width:100%; margin:12px auto; padding:15px; }
+  .year-chart-grid { grid-template-columns:minmax(0,1fr); gap:9px; }
+  .year-chart-month { display:grid; grid-template-columns:48px minmax(0,1fr) 62px; align-items:center; gap:8px; text-align:left; }
+  .year-chart-label { margin:0; }
+  .year-chart-track { height:11px; display:block; }
+  .year-chart-fill { height:100%; width:var(--month-pct); border-radius:8px; }
+  .year-chart-value { text-align:right; font-size:11px; white-space:nowrap; }
+  .shopping-summary { align-items:flex-start; }
+  .meal-slot { min-height:58px; }
+}
+@media(max-width:380px) {
+  .comparison-number { font-size:18px; }
+  .comparison-values { gap:6px; }
+  main { padding-left:8px; padding-right:8px; }
+  .card { padding:12px; }
+  nav button { padding-left:1px; padding-right:1px; font-size:9px; }
+  nav span { font-size:17px; }
+}
 
 </style>
   <script src="config.js"></script>
@@ -573,7 +638,7 @@ nav span {
       <button type="button" onclick="saveMealWeek()">Wochenplan speichern</button>
       <button class="secondary" type="button" onclick="showPage('shopping');showMealShoppingList()">Zur Einkaufsliste</button>
     </div>
-    <p class="small">Gerichte länger antippen und in einen Tag / eine Mahlzeit ziehen. Das funktioniert auch auf dem iPhone. Du kannst mehrere Einträge pro Mahlzeit ablegen.</p>
+    <p class="small">Die sieben Tage werden auf dem Smartphone untereinander angezeigt. Einträge kannst du antippen und bearbeiten; auf größeren Bildschirmen ist zusätzlich Ziehen möglich. Mehrere Einträge pro Mahlzeit sind möglich.</p>
     <div id="mealWeekStatus" class="status"></div>
     <div id="mealWeekGrid" class="meal-days"></div>
   </div>
@@ -1251,28 +1316,14 @@ function renderStatistics() {
   const max=Math.max(...months.map(m=>m.value),1);
 
   document.getElementById('yearChart').innerHTML=`
-    <div style="display:grid;
-                grid-template-columns:repeat(6,1fr);
-                gap:9px;margin-top:18px">
+    <div class="year-chart-grid">
       ${months.map(m=>`
-        <div style="text-align:center">
-          <div style="height:125px;
-                      display:flex;
-                      align-items:end;
-                      background:#f0f3f7;
-                      border-radius:7px;
-                      overflow:hidden">
-            <div title="${money(m.value)}"
-                 style="width:100%;
-                        height:${m.value/max*100}%;
-                        background:linear-gradient(180deg,#2477c5,#087f8c);
-                        border-radius:7px 7px 0 0">
-            </div>
+        <div class="year-chart-month">
+          <small class="year-chart-label">${m.label}</small>
+          <div class="year-chart-track">
+            <div class="year-chart-fill" title="${money(m.value)}" style="--month-pct:${m.value/max*100}%"></div>
           </div>
-          <small>${m.label}</small>
-          <div style="font-size:10px;color:#718096">
-            ${Math.round(m.value)} €
-          </div>
+          <div class="year-chart-value">${Math.round(m.value)} €</div>
         </div>
       `).join('')}
     </div>`;
@@ -1653,7 +1704,7 @@ const mealTypes=['Frühstück','Mittagessen','Abendessen'];
 function mealLocalMonday(d){const x=new Date(d);x.setHours(12,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');}
 function mealDateOffset(s,n){const p=s.split('-').map(Number),d=new Date(p[0],p[1]-1,p[2]+n,12);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function mealDateLabel(s){return new Date(s+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});}
-function loadMealWeek(){const input=document.getElementById('mealWeekStart');if(!input.value)input.value=mealLocalMonday(new Date());const start=mealLocalMonday(new Date(input.value+'T12:00:00'));input.value=start;google.script.run.withSuccessHandler(d=>{mealData=d||{recipes:[],plan:[]};renderMealWeek();}).withFailureHandler(e=>showMessage('mealWeekStatus',e.message||String(e),'error')).getMealData(start);}
+function loadMealWeek(){const input=document.getElementById('mealWeekStart');if(!input.value)input.value=mealLocalMonday(new Date());const start=mealLocalMonday(new Date(input.value+'T12:00:00'));input.value=start;google.script.run.withSuccessHandler(d=>{mealData=d||{recipes:[],plan:[]};renderMealWeek();}).withFailureHandler(e=>showMessage('mealWeekStatus',e.message||String(e),'error')).getMealPlannerData(start);}
 function changeMealWeek(delta){const el=document.getElementById('mealWeekStart');const base=el.value||mealLocalMonday(new Date());el.value=mealDateOffset(base,delta);loadMealWeek();}
 function renderMealWeek(){const root=document.getElementById('mealWeekGrid');root.innerHTML='';const start=mealData.weekStart||document.getElementById('mealWeekStart').value;for(let day=0;day<7;day++){const date=mealDateOffset(start,day);const col=document.createElement('div');col.className='meal-day';col.innerHTML='<h3>'+mealNames[day]+' · '+mealDateLabel(date)+'</h3>';mealTypes.forEach(type=>{const slot=document.createElement('div');slot.className='meal-slot';slot.dataset.date=date;slot.dataset.meal=type;slot.innerHTML='<div class="row"><div class="meal-slot-title">'+type+'</div><button type="button" class="secondary" style="padding:4px 7px;font-size:10px" onclick="addMealPlaceholder(\''+date+'\',\''+type+'\')">＋ Platzhalter</button></div>';const entries=(mealData.plan||[]).filter(p=>p.date===date&&p.meal===type).sort((a,b)=>a.position-b.position);entries.forEach(p=>{const chip=document.createElement('div');chip.className='meal-chip'+(p.type==='placeholder'?' placeholder':'');chip.textContent=p.title+' · '+p.audience;chip.dataset.entryId=p.id;chip.dataset.kind='plan';chip.title='Antippen: Zielgruppe ändern';chip.addEventListener('pointerdown',mealPointerDown);chip.addEventListener('click',()=>{if(!mealSuppressClick)editMealEntry(p.id);});slot.appendChild(chip);});slot.addEventListener('pointerup',mealDrop);slot.addEventListener('pointerenter',()=>slot.classList.add('over'));slot.addEventListener('pointerleave',()=>slot.classList.remove('over'));col.appendChild(slot);});root.appendChild(col);} }
 function mealPointerDown(e){if(e.button!==undefined&&e.button!==0)return;const chip=e.currentTarget;const rect=chip.getBoundingClientRect();mealDrag={kind:'plan',id:chip.dataset.entryId,source:chip,startX:e.clientX,startY:e.clientY,ghost:chip.cloneNode(true),moved:false};mealDrag.ghost.classList.add('meal-touch-ghost');mealDrag.ghost.style.left=rect.left+'px';mealDrag.ghost.style.top=rect.top+'px';document.body.appendChild(mealDrag.ghost);chip.classList.add('dragging');try{chip.setPointerCapture(e.pointerId);}catch(err){}document.addEventListener('pointermove',mealPointerMove,{passive:false});document.addEventListener('pointerup',mealPointerEnd,{once:true});}
