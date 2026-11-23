@@ -997,4 +997,651 @@ function saveBudget() {
       renderDashboard();
       showMessage('budgetStatus','Budget wurde gespeichert.','ok');
       button.disabled = false;
-      button.textContent = 'Budget speichern';
+      button.textContent = 'Budget speichern';    })
+    .withFailureHandler(error => {
+      showMessage('budgetStatus',error.message || String(error),'error');
+      button.disabled = false;
+      button.textContent = 'Erneut versuchen';
+    })
+    .saveMonthlyBudget(value);
+}
+
+// INITIALISIERUNG
+function initialize() {
+  document.getElementById('dashMonth').value = currentMonth();
+  document.getElementById('bookingMonth').value = currentMonth();
+  document.getElementById('date').value = localDate();
+
+  google.script.run
+    .withSuccessHandler(data=>{
+      formCategories=data.categories || [];
+
+      ['category','editCategory'].forEach(id=>{
+        const el=document.getElementById(id);
+        el.innerHTML='';
+
+        formCategories.forEach(c=>{
+          const op=document.createElement('option');
+          op.value=c;
+          op.textContent=c;
+          el.appendChild(op);
+        });
+      });
+
+      const filter=document.getElementById('filterCategory');
+
+      formCategories.forEach(c=>{
+        const op=document.createElement('option');
+        op.value=c;
+        op.textContent=c;
+        filter.appendChild(op);
+      });
+
+      loadData();
+      loadShoppingData();
+    })
+    .withFailureHandler(showError)
+    .getFormData();
+
+  const years=document.getElementById('yearSelect');
+  const y=new Date().getFullYear();
+
+  for(let i=y-3;i<=y+1;i++){
+    const op=document.createElement('option');
+    op.value=i;
+    op.textContent=i;
+
+    if(i===y) op.selected=true;
+    years.appendChild(op);
+  }
+}
+
+
+// DASHBOARD
+function renderDashboard() {
+  const d=appData;
+
+  document.getElementById('total').textContent=money(d.total);
+  document.getElementById('budget').textContent=money(d.budget);
+  document.getElementById('remaining').textContent=money(d.remaining);
+
+  const pct=d.budget>0 ? Math.round(d.total/d.budget*100) : 0;
+
+  document.getElementById('percent').textContent=pct+' %';
+  document.getElementById('progress').style.width=Math.min(pct,100)+'%';
+
+  document.getElementById('categories').innerHTML =
+    (d.categories || []).map(c=>{
+      const p=d.total>0 ? c.amount/d.total*100 : 0;
+
+      return `<div class="category">
+        <div class="row">
+          <span>${escapeHtml(c.name)}</span>
+          <strong>${money(c.amount)}</strong>
+        </div>
+        <div class="bar">
+          <div style="width:${p}%"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+  document.getElementById('recent').innerHTML =
+    (d.transactions || []).slice(0,5).map(transactionHtml).join('') ||
+    '<div class="empty">Noch keine Buchungen in diesem Monat.</div>';
+
+  const selectedMonth =
+    document.getElementById('dashMonth').value || currentMonth();
+
+  const previousMonth=monthKeyOffset(selectedMonth,-1);
+
+  const all=Array.isArray(d.allTransactions) ? d.allTransactions : [];
+
+  const previousTotal=all
+    .filter(t=>t.date && t.date.startsWith(previousMonth))
+    .reduce((sum,t)=>sum+Number(t.amount || 0),0);
+
+  document.getElementById('compareCurrentLabel').textContent=monthLabel(selectedMonth);
+  document.getElementById('comparePreviousLabel').textContent=monthLabel(previousMonth);
+  document.getElementById('compareCurrent').textContent=money(d.total);
+  document.getElementById('comparePrevious').textContent=money(previousTotal);
+
+  const changeEl=document.getElementById('compareChange');
+  const hintEl=document.getElementById('compareHint');
+
+  changeEl.className='comparison-change neutral';
+
+  if(previousTotal===0 && d.total===0) {
+    changeEl.textContent='Noch keine Ausgaben in beiden Monaten';
+    hintEl.textContent='Sobald Buchungen vorhanden sind, erscheint hier der Vergleich.';
+  } else if(previousTotal===0) {
+    changeEl.textContent='Noch keine Vergleichsbasis im Vormonat';
+    hintEl.textContent='Im Vormonat wurden keine Ausgaben gefunden.';
+  } else {
+    const difference=d.total-previousTotal;
+    const percentChange=difference/previousTotal*100;
+
+    const direction=difference>0 ? 'mehr' : difference<0 ? 'weniger' : 'gleich viel';
+
+    changeEl.className='comparison-change ' +
+      (difference>0 ? 'up' : difference<0 ? 'down' : 'neutral');
+
+    changeEl.textContent=
+      (difference>0 ? '▲ ' : difference<0 ? '▼ ' : '• ') +
+      money(Math.abs(difference))+' '+direction+' ('+
+      Math.abs(percentChange).toLocaleString('de-DE',{
+        maximumFractionDigits:1
+      })+' %)';
+
+    hintEl.textContent=difference>0
+      ? 'Ihr habt in diesem Monat bisher mehr ausgegeben als im Vormonat.'
+      : difference<0
+        ? 'Ihr habt in diesem Monat bisher weniger ausgegeben als im Vormonat.'
+        : 'Die Ausgaben sind in beiden Monaten gleich hoch.';
+  }
+}
+
+
+// BUCHUNGSDARSTELLUNG
+function transactionHtml(t) {
+  return `<div class="transaction">
+    <div class="icon">🛒</div>
+    <div class="transaction-info">
+      <strong>${escapeHtml(t.description)}</strong>
+      <small>
+        ${escapeHtml(t.category)}
+        · ${formatDate(t.date)}
+        · ${escapeHtml(t.person)}
+      </small>
+    </div>
+    <div class="amount">${money(t.amount)}</div>
+  </div>`;
+}
+
+
+// BUCHUNGEN FILTERN
+function renderTransactions() {
+  if(!appData) return;
+
+  const month=document.getElementById('bookingMonth').value;
+  const search=document.getElementById('search').value.toLowerCase();
+  const cat=document.getElementById('filterCategory').value;
+  const person=document.getElementById('filterPerson').value;
+
+  const list=(appData.allTransactions || []).filter(t=>
+    (!month || (t.date && t.date.startsWith(month))) &&
+    (!search || String(t.description).toLowerCase().includes(search)) &&
+    (!cat || t.category===cat) &&
+    (!person || t.person===person)
+  );
+
+  document.getElementById('bookingTotal').textContent =
+    money(list.reduce((s,t)=>s+Number(t.amount || 0),0));
+
+  document.getElementById('bookingList').innerHTML =
+    list.map(t=>`
+      <div>
+        ${transactionHtml(t)}
+        <div class="actions">
+          <button class="secondary"
+                  onclick="editExpense('${escapeHtml(t.id)}')">
+            Bearbeiten
+          </button>
+          <button class="danger"
+                  onclick="removeExpense('${escapeHtml(t.id)}')">
+            Löschen
+          </button>
+          ${t.receipt
+            ? `<a href="${escapeHtml(t.receipt)}"
+                  target="_blank" rel="noopener">Beleg</a>`
+            : ''}
+        </div>
+      </div>
+    `).join('') || '<div class="empty">Keine passenden Buchungen.</div>';
+}
+
+
+// STATISTIK
+function renderStatistics() {
+  if(!appData) return;
+
+  const year=String(document.getElementById('yearSelect').value);
+
+  const months=Array.from({length:12},(_,i)=>{
+    const key=year+'-'+String(i+1).padStart(2,'0');
+
+    return {
+      key,
+      label:new Date(Number(year),i,1)
+        .toLocaleDateString('de-DE',{month:'short'}),
+      value:appData.monthlyTotals[key] || 0
+    };
+  });
+
+  const max=Math.max(...months.map(m=>m.value),1);
+
+  document.getElementById('yearChart').innerHTML=`
+    <div style="display:grid;
+                grid-template-columns:repeat(6,1fr);
+                gap:9px;margin-top:18px">
+      ${months.map(m=>`
+        <div style="text-align:center">
+          <div style="height:125px;
+                      display:flex;
+                      align-items:end;
+                      background:#f0f3f7;
+                      border-radius:7px;
+                      overflow:hidden">
+            <div title="${money(m.value)}"
+                 style="width:100%;
+                        height:${m.value/max*100}%;
+                        background:linear-gradient(180deg,#2477c5,#087f8c);
+                        border-radius:7px 7px 0 0">
+            </div>
+          </div>
+          <small>${m.label}</small>
+          <div style="font-size:10px;color:#718096">
+            ${Math.round(m.value)} €
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+
+  const yearTransactions=(appData.allTransactions || [])
+    .filter(t=>t.date && t.date.startsWith(year));
+
+  const total=yearTransactions.reduce(
+    (s,t)=>s+Number(t.amount || 0),0
+  );
+
+  document.getElementById('yearTotal').textContent=money(total);
+
+  const cats={};
+
+  yearTransactions.forEach(t=>{
+    cats[t.category]=(cats[t.category] || 0)+Number(t.amount || 0);
+  });
+
+  document.getElementById('yearCategories').innerHTML =
+    Object.entries(cats)
+      .sort((a,b)=>b[1]-a[1])
+      .map(([name,value])=>`
+        <div class="row"
+             style="padding:10px 0;border-bottom:1px solid #eee">
+          <span>${escapeHtml(name)}</span>
+          <strong>${money(value)}</strong>
+        </div>
+      `).join('') || '<div class="empty">Noch keine Jahresdaten.</div>';
+}
+
+
+// NEUE BUCHUNG SPEICHERN
+function submitExpense(event) {
+  event.preventDefault();
+
+  const button=document.getElementById('saveButton');
+  button.disabled=true;
+  button.textContent='Speichert …';
+
+  readReceipt(document.getElementById('receipt').files[0])
+    .then(receipt=>{
+      const payload={
+        date:document.getElementById('date').value,
+        description:document.getElementById('description').value,
+        amount:document.getElementById('amount').value,
+        category:document.getElementById('category').value,
+        person:document.getElementById('person').value,
+        payment:document.getElementById('payment').value,
+        receipt
+      };
+
+      google.script.run
+        .withSuccessHandler(result=>{
+          showMessage('formStatus',result.message,'ok');
+          applyTransactionChange(result.transaction);
+          resetForm();
+          button.disabled=false;
+          button.textContent='Ausgabe speichern';
+        })
+        .withFailureHandler(error=>{
+          showMessage('formStatus',error.message,'error');
+          button.disabled=false;
+          button.textContent='Erneut versuchen';
+        })
+        .saveExpense(payload);
+    })
+    .catch(error=>{
+      showMessage('formStatus',error.message,'error');
+      button.disabled=false;
+      button.textContent='Ausgabe speichern';
+    });
+}
+
+
+// BUCHUNG BEARBEITEN
+function editExpense(id) {
+  const t=(appData.allTransactions || []).find(x=>x.id===id);
+  if(!t) return;
+
+  document.getElementById('editId').value=t.id;
+  document.getElementById('editDate').value=t.date;
+  document.getElementById('editDescription').value=t.description;
+  document.getElementById('editAmount').value=String(t.amount).replace('.',',');
+  document.getElementById('editCategory').value=t.category;
+  document.getElementById('editPerson').value=t.person;
+  document.getElementById('editPayment').value=t.payment;
+
+  editingReceipt=!!t.receipt;
+  document.getElementById('editModal').style.display='block';
+}
+
+
+// ÄNDERUNGEN SPEICHERN
+function submitEdit(event) {
+  event.preventDefault();
+
+  const payload={
+    id:document.getElementById('editId').value,
+    date:document.getElementById('editDate').value,
+    description:document.getElementById('editDescription').value,
+    amount:document.getElementById('editAmount').value,
+    category:document.getElementById('editCategory').value,
+    person:document.getElementById('editPerson').value,
+    payment:document.getElementById('editPayment').value,
+    keepReceipt:editingReceipt
+  };
+
+  google.script.run
+    .withSuccessHandler(r=>{
+      closeModal();
+      applyTransactionChange(r.transaction);
+    })
+    .withFailureHandler(e=>
+      showMessage('editStatus',e.message,'error')
+    )
+    .updateExpense(payload);
+}
+
+
+// BUCHUNG LÖSCHEN
+function removeExpense(id) {
+  if(!confirm('Möchtest du diese Buchung wirklich löschen?')) return;
+
+  google.script.run
+    .withSuccessHandler(result=>{
+      applyTransactionChange(null, result.id || id);
+    })
+    .withFailureHandler(showError)
+    .deleteExpense(id);
+}
+
+
+// MODAL SCHLIESSEN
+function closeModal() {
+  document.getElementById('editModal').style.display='none';
+}
+
+
+// FORMULAR ZURÜCKSETZEN
+function resetForm() {
+  document.getElementById('expenseForm').reset();
+  document.getElementById('date').value=localDate();
+  showMessage('formStatus','','');
+}
+
+
+// BELEG LESEN
+function readReceipt(file) {
+  if(!file) return Promise.resolve(null);
+
+  if(file.size>8*1024*1024) {
+    return Promise.reject(new Error('Beleg maximal 8 MB.'));
+  }
+
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+
+    reader.onload=()=>resolve({
+      name:file.name,
+      mimeType:file.type,
+      data:String(reader.result).split(',')[1]
+    });
+
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+
+// STATUSMELDUNGEN
+function showMessage(id,message,type) {
+  const el=document.getElementById(id);
+  el.textContent=message;
+  el.className='status '+(type || '');
+}
+
+
+// FEHLER
+function showError(e) {
+  alert(e.message || String(e));
+}
+
+
+// DATUM FORMATIEREN
+function formatDate(value) {
+  if(!value) return '';
+
+  return new Date(value+'T12:00:00')
+    .toLocaleDateString('de-DE');
+}
+
+
+// HTML SICHER AUSGEBEN
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g,c=>({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[c]));
+}
+
+
+// Beim Zurückkehren zur App Daten vom gemeinsamen Sheet abgleichen.
+let lastVisibilityRefresh = 0;
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState !== 'visible') return;
+  const now = Date.now();
+  if(now - lastVisibilityRefresh < 5000) return;
+  lastVisibilityRefresh = now;
+  if(appData) loadData();
+});
+
+
+
+// ================================================================
+// VERSION 3.0 – KASSENBON / EINKAUFSOPTIMIERUNG
+// ================================================================
+let shoppingReceiptUrl = '';
+let shoppingItemsState = [];
+
+function analyzeShoppingReceipt() {
+  const file = document.getElementById('shoppingPhoto').files[0];
+  if (!file) { showMessage('shoppingStatus','Bitte zuerst ein Kassenbon-Foto auswählen.','error'); return; }
+  if (!document.getElementById('receiptPrivacyConfirm').checked) {
+    showMessage('shoppingStatus','Bitte bestätige, dass sensible Angaben abgedeckt wurden.','error'); return;
+  }
+  if (file.size > 7 * 1024 * 1024) { showMessage('shoppingStatus','Das Foto darf maximal 7 MB groß sein.','error'); return; }
+  const button = document.getElementById('analyzeReceiptButton');
+  button.disabled = true; button.textContent = 'Kassenbon wird analysiert …';
+  showMessage('shoppingStatus','Foto wird an Gemini übertragen. Das kann einen Moment dauern.','');
+  readReceipt(file).then(receipt => new Promise((resolve,reject) => {
+    google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).analyzeReceipt(receipt);
+  })).then(result => {
+    shoppingReceiptUrl = result.receiptUrl || '';
+    document.getElementById('shoppingStore').value = result.store || '';
+    document.getElementById('shoppingBranch').value = result.branch || '';
+    document.getElementById('shoppingDate').value = result.date || localDate();
+    document.getElementById('shoppingTotal').value = Number(result.total || 0).toFixed(2);
+    document.getElementById('shoppingReceiptUrl').value = shoppingReceiptUrl;
+    document.getElementById('shoppingModelLabel').textContent = result.model || 'Gemini';
+    shoppingItemsState = Array.isArray(result.items) ? result.items : [];
+    renderShoppingItems();
+    document.getElementById('shoppingReview').style.display = 'block';
+    showMessage('shoppingStatus','Kassenbon erkannt. Bitte alle Produkte und Preise kontrollieren.','ok');
+    document.getElementById('shoppingReview').scrollIntoView({behavior:'smooth',block:'start'});
+  }).catch(error => {
+    showMessage('shoppingStatus',error.message || String(error),'error');
+  }).finally(() => {
+    button.disabled = false; button.textContent = 'Erneut auslesen';
+  });
+}
+
+function renderShoppingItems() {
+  const host = document.getElementById('shoppingItems');
+  host.innerHTML = shoppingItemsState.map((item,index) => `
+    <div class="shopping-item" data-index="${index}">
+      <input class="item-name" data-field="name" aria-label="Produktname" value="${escapeHtml(item.productName || item.name || '')}" placeholder="Produktname">
+      <input data-field="quantity" type="number" min="0" step="0.01" aria-label="Menge" value="${Number(item.quantity || 1)}">
+      <input data-field="unit" aria-label="Einheit" value="${escapeHtml(item.unit || 'Stk.')}" placeholder="Einheit">
+      <input data-field="unitPrice" type="number" step="0.01" aria-label="Einzelpreis" value="${Number(item.unitPrice || 0).toFixed(2)}" placeholder="Einzelpreis">
+      <input data-field="lineTotal" type="number" step="0.01" aria-label="Positionssumme" value="${Number(item.lineTotal || 0).toFixed(2)}" placeholder="Summe">
+      <select class="item-category" data-field="category" aria-label="Produktbereich">
+        <option ${item.category==='Lebensmittel'?'selected':''}>Lebensmittel</option>
+        <option ${item.category==='Haushalt/Drogerie'?'selected':''}>Haushalt/Drogerie</option>
+        <option ${item.category==='Sonstiges'?'selected':''}>Sonstiges</option>
+      </select>
+      <button class="remove-item" type="button" onclick="removeShoppingItem(${index})">Entfernen</button>
+      ${Number(item.confidence || 0) < 0.65 ? '<div class="small confidence-low">Bitte besonders sorgfältig prüfen – unsichere Erkennung</div>' : ''}
+    </div>`).join('');
+  document.getElementById('shoppingItemCount').textContent = shoppingItemsState.length + ' Positionen';
+  updateShoppingItemsTotal();
+  host.querySelectorAll('input,select').forEach(el => el.addEventListener('input', updateShoppingItemsTotal));
+}
+
+function collectShoppingItems() {
+  return [...document.querySelectorAll('#shoppingItems .shopping-item')].map(row => ({
+    name:row.querySelector('[data-field="name"]').value.trim(),
+    originalName:row.querySelector('[data-field="name"]').value.trim(),
+    quantity:Number(row.querySelector('[data-field="quantity"]').value) || 1,
+    unit:row.querySelector('[data-field="unit"]').value.trim() || 'Stk.',
+    unitPrice:Number(row.querySelector('[data-field="unitPrice"]').value) || 0,
+    lineTotal:Number(row.querySelector('[data-field="lineTotal"]').value) || 0,
+    category:row.querySelector('[data-field="category"]').value,
+    confidence:1
+  }));
+}
+
+function updateShoppingItemsTotal() {
+  const total = collectShoppingItems().reduce((sum,item) => sum + item.lineTotal,0);
+  document.getElementById('shoppingItemsTotal').textContent = money(total);
+}
+
+function addShoppingItem() {
+  shoppingItemsState = collectShoppingItems();
+  shoppingItemsState.push({productName:'',quantity:1,unit:'Stk.',unitPrice:0,lineTotal:0,category:'Lebensmittel',confidence:1});
+  renderShoppingItems();
+}
+
+function removeShoppingItem(index) {
+  shoppingItemsState = collectShoppingItems();
+  shoppingItemsState.splice(index,1);
+  renderShoppingItems();
+}
+
+function saveShopping() {
+  const items = collectShoppingItems();
+  const payload = {
+    date:document.getElementById('shoppingDate').value,
+    store:document.getElementById('shoppingStore').value.trim(),
+    branch:document.getElementById('shoppingBranch').value.trim(),
+    person:document.getElementById('shoppingPerson').value,
+    total:document.getElementById('shoppingTotal').value,
+    receiptUrl:document.getElementById('shoppingReceiptUrl').value,
+    items
+  };
+  if (!payload.store || !payload.date || !payload.total || !items.length || items.some(i=>!i.name)) {
+    showMessage('shoppingSaveStatus','Bitte Datum, Supermarkt, Gesamtsumme und alle Produktnamen prüfen.','error'); return;
+  }
+  const button = document.getElementById('saveShoppingButton');
+  button.disabled = true; button.textContent = 'Speichert …';
+  google.script.run.withSuccessHandler(result => {
+    showMessage('shoppingSaveStatus','Einkauf gespeichert. Die Gesamtsumme wurde einmalig ins Haushaltsbuch übernommen.','ok');
+    if (result.transaction) applyTransactionChange(result.transaction);
+    document.getElementById('shoppingReview').style.display = 'none';
+    document.getElementById('shoppingPhoto').value = '';
+    document.getElementById('receiptPrivacyConfirm').checked = false;
+    shoppingItemsState = []; shoppingReceiptUrl = '';
+    loadShoppingData();
+    loadData();
+    button.disabled = false; button.textContent = 'Einkauf bestätigen und speichern';
+  }).withFailureHandler(error => {
+    showMessage('shoppingSaveStatus',error.message || String(error),'error');
+    button.disabled = false; button.textContent = 'Erneut versuchen';
+  }).saveShoppingPurchase(payload);
+}
+
+function loadShoppingData() {
+  google.script.run.withSuccessHandler(data => {
+    document.getElementById('shoppingMonthTotal').textContent = money(data.monthTotal);
+    document.getElementById('shoppingFoodTotal').textContent = money(data.foodTotal);
+    document.getElementById('shoppingHouseholdTotal').textContent = money(data.householdTotal);
+    document.getElementById('shoppingItemCountMonth').textContent = String(data.itemCount || 0);
+    document.getElementById('shoppingHistory').innerHTML = (data.purchases || []).map(p => `
+      <div class="shopping-list-row">
+        <div class="row"><strong>${escapeHtml(p.store)}</strong><strong>${money(p.total)}</strong></div>
+        <div class="small">${formatDate(p.date)} · ${escapeHtml(p.person)}${p.branch ? ' · '+escapeHtml(p.branch) : ''}</div>
+        ${p.receiptUrl ? `<a href="${escapeHtml(p.receiptUrl)}" target="_blank" rel="noopener">Kassenbon in Google Drive öffnen</a>` : ''}
+      </div>`).join('') || 'Noch keine Einkäufe erfasst.';
+    google.script.run.withSuccessHandler(insights => {
+      const root=document.getElementById('shoppingInsights');
+      const forecast=(insights.forecast||[]).slice(0,8);
+      const savings=(insights.savings||[]).slice(0,8);
+      let html='';
+      if(forecast.length) html+='<strong>Regelmäßig gekaufte Produkte</strong>'+forecast.map(x=>'<div style="padding:6px 0">'+escapeHtml(x.name)+' – etwa alle '+x.everyDays+' Tage</div>').join('');
+      if(savings.length) html+='<strong style="display:block;margin-top:10px">Preisunterschiede zwischen Märkten</strong>'+savings.map(x=>'<div style="padding:6px 0">'+escapeHtml(x.name)+': günstiger bei '+escapeHtml(x.cheapestStore)+' (Ø '+money(x.cheapestPrice)+') statt '+escapeHtml(x.worstStore)+' (Ø '+money(x.worstPrice)+')</div>').join('');
+      root.innerHTML=html||'Noch nicht genügend erfasste Produktdaten für eine belastbare Analyse.';
+    }).withFailureHandler(()=>{document.getElementById('shoppingInsights').textContent='Die Einkaufsanalyse ist momentan nicht verfügbar.';}).getInsights();
+  }).withFailureHandler(error => showMessage('shoppingStatus',error.message || String(error),'error')).getShoppingData();
+}
+
+
+// APP STARTEN
+initialize();
+
+
+
+// ================================================================
+// ESSENSPLANER – Wochenplan und Touch-/Pointer-Drag-and-drop
+// ================================================================
+let mealData={recipes:[],plan:[]};
+let mealDrag=null;
+let mealSuppressClick=false;
+const mealNames=['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
+const mealTypes=['Frühstück','Mittagessen','Abendessen'];
+function mealLocalMonday(d){const x=new Date(d);x.setHours(12,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');}
+function mealDateOffset(s,n){const p=s.split('-').map(Number),d=new Date(p[0],p[1]-1,p[2]+n,12);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function mealDateLabel(s){return new Date(s+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});}
+function loadMealWeek(){const input=document.getElementById('mealWeekStart');if(!input.value)input.value=mealLocalMonday(new Date());const start=mealLocalMonday(new Date(input.value+'T12:00:00'));input.value=start;google.script.run.withSuccessHandler(d=>{mealData=d||{recipes:[],plan:[]};renderMealWeek();}).withFailureHandler(e=>showMessage('mealWeekStatus',e.message||String(e),'error')).getMealData(start);}
+function changeMealWeek(delta){const el=document.getElementById('mealWeekStart');const base=el.value||mealLocalMonday(new Date());el.value=mealDateOffset(base,delta);loadMealWeek();}
+function renderMealWeek(){const root=document.getElementById('mealWeekGrid');root.innerHTML='';const start=mealData.weekStart||document.getElementById('mealWeekStart').value;for(let day=0;day<7;day++){const date=mealDateOffset(start,day);const col=document.createElement('div');col.className='meal-day';col.innerHTML='<h3>'+mealNames[day]+' · '+mealDateLabel(date)+'</h3>';mealTypes.forEach(type=>{const slot=document.createElement('div');slot.className='meal-slot';slot.dataset.date=date;slot.dataset.meal=type;slot.innerHTML='<div class="row"><div class="meal-slot-title">'+type+'</div><button type="button" class="secondary" style="padding:4px 7px;font-size:10px" onclick="addMealPlaceholder(\''+date+'\',\''+type+'\')">＋ Platzhalter</button></div>';const entries=(mealData.plan||[]).filter(p=>p.date===date&&p.meal===type).sort((a,b)=>a.position-b.position);entries.forEach(p=>{const chip=document.createElement('div');chip.className='meal-chip'+(p.type==='placeholder'?' placeholder':'');chip.textContent=p.title+' · '+p.audience;chip.dataset.entryId=p.id;chip.dataset.kind='plan';chip.title='Antippen: Zielgruppe ändern';chip.addEventListener('pointerdown',mealPointerDown);chip.addEventListener('click',()=>{if(!mealSuppressClick)editMealEntry(p.id);});slot.appendChild(chip);});slot.addEventListener('pointerup',mealDrop);slot.addEventListener('pointerenter',()=>slot.classList.add('over'));slot.addEventListener('pointerleave',()=>slot.classList.remove('over'));col.appendChild(slot);});root.appendChild(col);} }
+function mealPointerDown(e){if(e.button!==undefined&&e.button!==0)return;const chip=e.currentTarget;const rect=chip.getBoundingClientRect();mealDrag={kind:'plan',id:chip.dataset.entryId,source:chip,startX:e.clientX,startY:e.clientY,ghost:chip.cloneNode(true),moved:false};mealDrag.ghost.classList.add('meal-touch-ghost');mealDrag.ghost.style.left=rect.left+'px';mealDrag.ghost.style.top=rect.top+'px';document.body.appendChild(mealDrag.ghost);chip.classList.add('dragging');try{chip.setPointerCapture(e.pointerId);}catch(err){}document.addEventListener('pointermove',mealPointerMove,{passive:false});document.addEventListener('pointerup',mealPointerEnd,{once:true});}
+function mealPointerMove(e){if(!mealDrag)return;const dx=e.clientX-mealDrag.startX,dy=e.clientY-mealDrag.startY;if(Math.abs(dx)+Math.abs(dy)>8)mealDrag.moved=true;if(mealDrag.moved){e.preventDefault();mealDrag.ghost.style.left=(e.clientX+10)+'px';mealDrag.ghost.style.top=(e.clientY+10)+'px';const el=document.elementFromPoint(e.clientX,e.clientY);document.querySelectorAll('.meal-slot.over').forEach(x=>x.classList.remove('over'));const slot=el&&el.closest('.meal-slot');if(slot)slot.classList.add('over');}}
+function mealPointerEnd(e){document.removeEventListener('pointermove',mealPointerMove);if(!mealDrag)return;const el=document.elementFromPoint(e.clientX,e.clientY);const slot=el&&el.closest('.meal-slot');if(slot&&mealDrag.moved){mealSuppressClick=true;setTimeout(()=>mealSuppressClick=false,300);mealMoveEntry(mealDrag.id,slot.dataset.date,slot.dataset.meal);}if(mealDrag.source)mealDrag.source.classList.remove('dragging');if(mealDrag.ghost&&mealDrag.ghost.parentNode)mealDrag.ghost.remove();document.querySelectorAll('.meal-slot.over').forEach(x=>x.classList.remove('over'));mealDrag=null;}
+function mealDrop(e){/* handled by pointerup document listener */}
+function mealMoveEntry(id,date,meal){const item=mealData.plan.find(x=>x.id===id);if(!item)return;item.date=date;item.meal=meal;item.position=(mealData.plan.filter(x=>x.date===date&&x.meal===meal).length)+1;renderMealWeek();showMessage('mealWeekStatus','Gericht verschoben. Bitte Wochenplan speichern.','ok');}
+function mealAddToPlan(recipe,date,meal){const entry={id:'local-'+Date.now()+'-'+Math.random().toString(16).slice(2),date,meal,position:mealData.plan.filter(x=>x.date===date&&x.meal===meal).length,type:'recipe',recipeId:recipe.id||'',title:recipe.title,audience:'Alle',servings:2,note:''};mealData.plan.push(entry);renderMealWeek();}
+function searchMealLibrary(){const q=document.getElementById('mealSearch').value;showMessage('mealSearchStatus','Suche …','');google.script.run.withSuccessHandler(r=>{const root=document.getElementById('mealRecipeResults');root.innerHTML='';const all=[...(r.local||[]),...(r.external||[])];if(!all.length){root.textContent='Keine Treffer gefunden.';return;}all.forEach(recipe=>{const card=document.createElement('div');card.className='meal-result';const img=recipe.image?'<img src="'+escapeHtml(recipe.image)+'" alt="">':'';card.innerHTML=img+'<div class="meal-meta"><strong>'+escapeHtml(recipe.title)+'</strong><small>'+escapeHtml(recipe.category||recipe.cuisine||recipe.source||'Rezept')+'</small></div><button type="button" class="secondary">'+(recipe.sourceId?'Import':'＋')+'</button>';const btn=card.querySelector('button');btn.addEventListener('click',()=>{if(recipe.id){const day=mealData.weekStart||document.getElementById('mealWeekStart').value;mealAddToPlan(recipe,day,'Abendessen');}else if(recipe.sourceId){google.script.run.withSuccessHandler(()=>{showMessage('mealSearchStatus','Rezept importiert.','ok');loadMealWeek();}).withFailureHandler(e=>showMessage('mealSearchStatus',e.message||String(e),'error')).importMealRecipe(recipe.sourceId);}else{const day=mealData.weekStart||document.getElementById('mealWeekStart').value;mealAddToPlan(recipe,day,'Abendessen');}});card.addEventListener('pointerdown',e=>mealLibraryPointerDown(e,recipe));root.appendChild(card);});showMessage('mealSearchStatus',all.length+' Treffer. Importierte Rezepte erscheinen danach im Wochenplan.','ok');}).withFailureHandler(e=>showMessage('mealSearchStatus',e.message||String(e),'error')).searchMealRecipes(q,'');}
+function mealLibraryPointerDown(e,recipe){if(e.target.closest('button'))return;const startX=e.clientX,startY=e.clientY;let moved=false;const move=ev=>{if(Math.abs(ev.clientX-startX)+Math.abs(ev.clientY-startY)>10)moved=true;};const end=ev=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);if(!moved)return;const el=document.elementFromPoint(ev.clientX,ev.clientY);const slot=el&&el.closest('.meal-slot');if(slot){if(recipe.sourceId&&!recipe.id){google.script.run.withSuccessHandler(r=>{mealData.recipes.push({...recipe,id:r.recipeId});mealAddToPlan({...recipe,id:r.recipeId},slot.dataset.date,slot.dataset.meal);}).withFailureHandler(err=>showMessage('mealSearchStatus',err.message||String(err),'error')).importMealRecipe(recipe.sourceId);}else{mealAddToPlan(recipe,slot.dataset.date,slot.dataset.meal);}}};document.addEventListener('pointermove',move,{passive:true});document.addEventListener('pointerup',end,{once:true});}
+function saveMealWeek(){const start=document.getElementById('mealWeekStart').value;google.script.run.withSuccessHandler(()=>{showMessage('mealWeekStatus','Wochenplan gespeichert und synchronisiert.','ok');loadMealWeek();}).withFailureHandler(e=>showMessage('mealWeekStatus',e.message||String(e),'error')).saveMealPlan(mealData.plan,start);}
+function saveOwnMealFromForm(){const title=document.getElementById('ownMealTitle').value.trim();if(!title){showMessage('mealSearchStatus','Bitte einen Rezeptnamen eingeben.','error');return;}const ingredients=document.getElementById('ownMealIngredients').value.split('\n').map(line=>line.trim()).filter(Boolean).map(line=>{const m=line.match(/^([\d.,]+)\s*(\S+)?\s+(.+)$/);return m?{amount:Number(m[1].replace(',','.')),unit:m[2]||'',name:m[3]}:{amount:null,unit:'',name:line};});const payload={title,category:document.getElementById('ownMealCategory').value,servings:Number(document.getElementById('ownMealServings').value)||4,ingredients,instructions:document.getElementById('ownMealInstructions').value};google.script.run.withSuccessHandler(()=>{document.getElementById('ownMealTitle').value='';document.getElementById('ownMealIngredients').value='';document.getElementById('ownMealInstructions').value='';showMessage('mealSearchStatus','Eigenes Rezept gespeichert.','ok');loadMealWeek();}).withFailureHandler(e=>showMessage('mealSearchStatus',e.message||String(e),'error')).saveOwnMealRecipe(payload);}
+function showMealShoppingList(){const start=document.getElementById('mealWeekStart').value||mealLocalMonday(new Date());google.script.run.withSuccessHandler(items=>{const root=document.getElementById('mealShoppingItems');root.innerHTML='';if(!items.length){root.textContent='Noch keine Zutaten aus Rezepten geplant.';return;}google.script.run.withSuccessHandler(checks=>{items.forEach(i=>{const row=document.createElement('label');row.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-weight:400;margin:0';const cb=document.createElement('input');cb.type='checkbox';const key=String(i.name).toLocaleLowerCase('de-DE').replace(/\s+/g,' ');cb.checked=!!checks[key];cb.style.cssText='width:20px;height:20px;flex:0 0 auto';const txt=document.createElement('span');txt.textContent=i.name+(i.amount?' · '+Number(i.amount.toFixed(2)):'')+(i.unit?' '+i.unit:'');const apply=()=>{txt.style.textDecoration=cb.checked?'line-through':'none';txt.style.opacity=cb.checked?'.55':'1';};apply();cb.addEventListener('change',()=>{apply();google.script.run.withFailureHandler(e=>showMessage('shoppingStatus',e.message||String(e),'error')).saveMealShoppingCheck(start,i.name,cb.checked);});row.append(cb,txt);root.appendChild(row);});}).withFailureHandler(e=>showMessage('shoppingStatus',e.message||String(e),'error')).getMealShoppingChecklist(start);}).withFailureHandler(e=>showMessage('shoppingStatus',e.message||String(e),'error')).buildMealShoppingList(start);}
+
+
+function addMealPlaceholder(date,meal){const title=prompt('Platzhalter für '+meal+' (z. B. Auswärts essen, Reste, bei Oma und Opa):','Auswärts essen');if(!title)return;const audience=prompt('Für wen? Alle, Kind oder Erwachsene','Alle')||'Alle';mealData.plan.push({id:'local-'+Date.now()+'-'+Math.random().toString(16).slice(2),date,meal,position:mealData.plan.filter(x=>x.date===date&&x.meal===meal).length,type:'placeholder',recipeId:'',title,audience,servings:2,note:''});renderMealWeek();showMessage('mealWeekStatus','Platzhalter ergänzt. Bitte Wochenplan speichern.','ok');}
+function editMealEntry(id){const item=mealData.plan.find(x=>x.id===id);if(!item)return;const audience=prompt('Zielgruppe: Alle, Kind oder Erwachsene',item.audience||'Alle');if(audience===null)return;item.audience=['Alle','Kind','Erwachsene'].includes(audience)?audience:'Alle';const servings=prompt('Portionen',String(item.servings||2));if(servings!==null&&Number(servings)>0)item.servings=Number(servings);if(confirm('Diesen Eintrag löschen?'))mealData.plan=mealData.plan.filter(x=>x.id!==id);renderMealWeek();showMessage('mealWeekStatus','Eintrag geändert. Bitte Wochenplan speichern.','ok');}
+
+</script>
+
+</body>
+</html>
