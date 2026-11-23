@@ -1,48 +1,62 @@
-HAUSHALTSBUCH – KORRIGIERTE 5-BEREICHE-VERSION
+HAUSHALTSBUCH – SMARTPHONE-OPTIMIERTE VERSION
 
-Die Navigation ist exakt:
-1. Erfassen – Ausgabe manuell erfassen und Beleg anhängen
-2. Statistik – Monatsübersicht, Vormonatsvergleich, Kategorien, letzte Buchungen, Jahresauswertung und darunter alle Buchungen mit Filtern/Bearbeiten/Löschen
-3. Essensplanung – Wochenplan, Rezeptdatenbank, eigene Rezepte und Touch-Drag-and-drop
-4. Einkaufsoptimierung – Kassenbons, Einkaufshistorie, Analyse bisheriger Einkäufe sowie gemeinsame Wochen-Einkaufsliste mit synchronisierten Häkchen
+FÜNF HAUPTBEREICHE
+1. Erfassen – Ausgaben manuell erfassen und Belege fotografieren
+2. Statistik – Monatsübersicht, Vormonatsvergleich, Kategorien, Jahresverlauf und alle Buchungen
+3. Essensplanung – Rezepte, eigene Rezepte, KI-Vorschläge und Wochenplan
+4. Einkaufsoptimierung – Kassenbonanalyse, Einkaufshistorie, Einkaufsanalyse und gemeinsame Checkliste
 5. Einstellungen – gemeinsames Monatsbudget
 
-DATEIEN
-- Index.html: vollständige neue Oberfläche
-- MealPlanner.gs: neue Funktionen für Rezepte, Wochenplan und gemeinsame Einkaufsliste
-- API.gs: ergänzte HTTP-API-Allowlist (für die direkte HTML-App nicht erforderlich)
-- Code.gs: Referenzkopie des bestehenden Backends. NICHT ersetzen, sofern deine bestehende Code.gs bereits die Haushaltsbuch-Funktionen enthält.
+SMARTPHONE-OPTIMIERUNG
+- Alle Inhalte passen sich an schmale iPhone- und Android-Bildschirme an.
+- Keine horizontale Verschiebung der gesamten App.
+- Navigation bleibt unten erreichbar und berücksichtigt den iPhone-Sicherheitsabstand.
+- Formulare, Buttons und Karten werden für Touch-Bedienung vergrößert.
+- Die sieben Wochentage stehen mobil untereinander statt in einer seitlich scrollenden Leiste.
+- Der Jahresverlauf zeigt die zwölf Monate mobil untereinander mit horizontalen Balken.
+- Vergleichswerte, Formulare, Einkaufspositionen und Rezeptkarten werden mobil einspaltig angeordnet.
 
-EINBAU – BITTE IN DIESER REIHENFOLGE
-1. Im Apps-Script-Projekt zuerst eine Sicherung der vorhandenen Dateien erstellen.
-2. Die vorhandene Datei Index.html vollständig öffnen, alles markieren und durch den kompletten Inhalt aus Index.html ersetzen.
-3. Im Apps-Script-Editor links auf + klicken → Skript. Neue Datei exakt MealPlanner nennen. Den kompletten Inhalt aus MealPlanner.gs einfügen.
-4. Code.gs unverändert lassen. Sie enthält die bestehenden Buchungs-, Budget- und Einkaufsfunktionen.
-5. API.gs ist nur nötig, wenn du die zusätzliche HTTP-API verwendest. In diesem Fall die beigefügte API.gs vollständig übernehmen, sofern deine bisherige API.gs dieselbe API-Struktur hat. Den vorhandenen Script-Property-Wert API_TOKEN nicht löschen oder neu erzeugen.
-6. Speichern.
-7. Web-App über Bereitstellen → Neue Bereitstellung → Web-App aktualisieren/bereitstellen. Zugriffseinstellungen wie bisher belassen.
-8. Web-App auf beiden iPhones neu laden. Falls die alte Oberfläche im Cache bleibt, Safari-Tab schließen und erneut öffnen.
+DATEIEN UND EINBAU
+1. Im Apps-Script-Projekt zuerst eine Sicherung der bestehenden Dateien erstellen.
+2. Die vorhandene Index.html vollständig durch die neue index.html aus diesem Branch ersetzen.
+3. Eine neue Skriptdatei MealPlanner.gs anlegen und den vollständigen Inhalt aus apps-script/MealPlanner.gs einfügen.
+4. Die bestehende Code.gs NICHT ersetzen.
+5. Die Datei apps-script/API.gs NICHT installieren. Sie wurde bewusst entfernt, weil deine bestehende Code.gs bereits doPost() und apiFunctions_() enthält. Eine zweite doPost()- oder apiFunctions_()-Definition würde zu Konflikten führen.
+6. In deiner bestehenden Code.gs ausschließlich die Funktion apiFunctions_() durch die folgende vollständige Fassung ersetzen. Alle anderen Funktionen bleiben unverändert:
 
-DATEN-SCHUTZ / BESTANDSDATEN
-- Bestehende Buchungs- und Einkaufsblätter werden nicht gelöscht.
-- Beim ersten Aufruf der Essensplanung werden bei Bedarf die neuen Tabellen Rezepte, Wochenplan, Rezeptquellen und Einkaufscheckliste angelegt.
-- Die Einkaufscheckliste wird in Google Sheets gespeichert. Abgehakte Zutaten werden damit zwischen beiden iPhones synchronisiert.
-- Die bisherige Code.gs ist unverändert als Referenz beigelegt. Bitte nicht zusätzlich als zweite Code.gs anlegen.
+function apiFunctions_() {
+  return {
+    getInitData, getAppData, getFormData, saveExpense, updateExpense,
+    deleteExpense, saveMonthlyBudget, getShoppingData, analyzeReceipt,
+    saveShoppingPurchase, getInsights,
+    getMealData, saveDish, deleteDish, savePlan, generateDish,
+    suggestDishes, buildShoppingList,
+    getMealPlannerData, searchMealRecipes, importMealRecipe,
+    saveOwnMealRecipe, saveMealPlan, buildMealShoppingList,
+    getMealAiStatus, generateAiMealRecipes,
+    getMealShoppingChecklist, saveMealShoppingCheck
+  };
+}
 
-WICHTIGE HINWEISE
-- Die Oberfläche nutzt google.script.run und benötigt daher die bestehende Apps-Script-Web-App.
-- Die Einkaufsanalyse benötigt bereits erfasste Einkaufsbons/Produktpositionen. Bei zu wenigen Daten wird ein entsprechender Hinweis angezeigt.
-- Importierte TheMealDB-Rezepte liefern Mengen teils als Freitext; solche Zutaten können in der Einkaufsliste ohne genaue Mengenangabe erscheinen.
-- Der Quellcode wurde auf JavaScript-Syntax und die fünf getrennten Seiten geprüft. Eine Live-Prüfung in deinem Apps-Script-Konto kann ich ohne Zugriff auf dein Projekt nicht durchführen.
+7. Die bestehende Script-Property API_TOKEN beibehalten. setupApiToken() nicht erneut ausführen und keinen neuen Token erzeugen.
+8. Speichern. Erst nach erfolgreichem Test die Apps-Script-Web-App als neue Version bereitstellen. Die bisherigen Zugriffseinstellungen beibehalten.
+9. Beide Smartphones neu laden. Wenn noch die alte Oberfläche erscheint, den Browser-Tab schließen und erneut öffnen.
 
-KI-ESSENSPLANUNG (NEU)
-1. Die KI-Rezeptgenerierung verwendet dieselbe bestehende Gemini-Konfiguration wie die bereits vorhandene KI-Beleg-/Produkterkennung. Es wird keine zweite Gemini-Verbindung eingerichtet.
-2. Die vorhandene Script-Property GEMINI_API_KEY wird weiterverwendet. Bitte keinen neuen API-Schlüssel anlegen und den bestehenden Schlüssel weder löschen noch ändern.
-3. Auch die vorhandene Script-Property GEMINI_MODEL wird weiterverwendet. Wenn sie bereits gesetzt ist, bleibt der bisherige Modellwert bestehen; nur wenn sie fehlt, greift der Fallback gemini-3.8-flash.
-4. Die neue MealPlanner.gs verwendet den Gemini-GenerateContent-Endpunkt und sendet die Rezeptanfrage als strukturierte JSON-Ausgabe. Die bestehende Beleg-/Produkterkennung in Code.gs wird nicht geändert.
-5. Die KI-Funktion läuft nur innerhalb der Apps-Script-Web-App, nicht in einer statischen GitHub-Pages-Vorschau.
-6. MealPlanner.gs im bestehenden Apps-Script-Projekt aktualisieren, speichern und die Web-App über Bereitstellen → Bereitstellungen verwalten → Bearbeiten → Neue Version aktualisieren.
-7. In der App unter Essensplanung den Bereich KI-Essensplanung verwenden. Einzelvorschläge erzeugen drei Rezepte für die ausgewählte Mahlzeit; der Wochenplan erzeugt 21 Rezepte (7 Tage × Frühstück, Mittag- und Abendessen).
-8. Die KI speichert ihre Rezepte in Rezepte. Ein kompletter KI-Wochenplan wird erst nach ausdrücklicher Bestätigung in Wochenplan übernommen. Bestehende Einträge dieser Woche werden dabei ersetzt; andere Wochen bleiben unberührt.
-9. Die Zutaten der übernommenen Rezepte fließen in die gemeinsame Einkaufsliste ein. Gramm/Kilogramm und Milliliter/Liter werden beim Addieren umgerechnet; unterschiedliche Einheiten bleiben getrennt.
-10. Gemini API-Nutzung kann je nach Google-Konto, Modell und Verbrauch kostenpflichtig sein. Kosten in der App sind grobe KI-Schätzungen und keine Live-Preise. Zutaten, Allergene und Mengen bitte vor dem Einkauf prüfen.
+BESTANDSDATEN
+- Bestehende Buchungen, Budgets, Belege und Einkaufsdaten werden nicht gelöscht.
+- Die bisherige Essensplanung (Gerichte/Planung) bleibt erhalten.
+- Der neue Essensplaner verwendet getrennte Tabellen: Rezepte, Wochenplan, Rezeptquellen und Einkaufscheckliste.
+- Die neue Wochenplanung wird nicht automatisch aus der alten Planung abgeleitet, da die alte Planung keine konkreten Wochentage enthält.
+- Die Einkaufscheckliste wird in Google Sheets gespeichert und kann von beiden Smartphones gemeinsam verwendet werden.
+
+GEMINI / KI-ESSENSPLANUNG
+- Die KI-Rezeptgenerierung ist eine neue Funktion des MealPlanner.gs und nicht mit der bisherigen Kassenbon-Erkennung gleichzusetzen.
+- Sie liest GEMINI_API_KEY aus den Script Properties. Der Schlüssel wird nicht im Frontend gespeichert.
+- Die vorhandene Kassenbon-Erkennung in Code.gs bleibt unverändert.
+- Einzelvorschläge erzeugen drei Rezepte. Die Wochenplanung erzeugt 21 Rezepte (7 Tage x Frühstück, Mittagessen und Abendessen).
+- KI-Rezepte und Kosten sind Vorschläge. Zutaten, Allergene und Mengen bitte vor dem Einkauf prüfen.
+
+WICHTIG
+- GitHub-Pages ist nur eine Oberflächenvorschau. Speichern, Synchronisierung, Kassenbonanalyse und Gemini-Funktionen benötigen die Apps-Script-Web-App.
+- Die Änderungen in diesem Branch sind noch nicht in main übernommen und werden nicht automatisch in deinem produktiven Apps-Script-Projekt bereitgestellt.
+- Vor einer Bereitstellung müssen die fünf Bereiche auf beiden Smartphones getestet werden.
