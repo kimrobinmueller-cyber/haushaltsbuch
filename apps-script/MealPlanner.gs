@@ -102,7 +102,7 @@ function saveOwnMealRecipe(payload) {
   return {success:true,id};
 }
 
-function saveMealPlan(entries, weekStart) {
+function saveMealPlannerWeek(entries, weekStart) {
   setupMealPlannerTables_();
   if(!Array.isArray(entries)) throw new Error('Ungültiger Wochenplan.');
   const start=mealIsoDate_(weekStart);
@@ -176,29 +176,27 @@ function generateAiMealRecipes(options) {
   const props = PropertiesService.getScriptProperties();
   const apiKey = props.getProperty('GEMINI_API_KEY');
   if (!apiKey) throw new Error('Die bestehende Gemini-Verbindung ist nicht eingerichtet: Script Property GEMINI_API_KEY fehlt.');
+  const models = [
+    props.getProperty('GEMINI_MODEL') || CONFIG.GEMINI_MODEL,
+    CONFIG.GEMINI_FALLBACK
+  ];
   const mode = options.mode === 'week' ? 'week' : 'single';
   const servings = Math.max(1, Math.min(10, Number(options.servings) || 4));
   const dayIndex = Math.max(0, Math.min(6, Number(options.dayIndex) || 0));
   const mealType = ['Frühstück','Mittagessen','Abendessen'].includes(String(options.mealType)) ? String(options.mealType) : 'Abendessen';
   const preferences = String(options.preferences || '').replace(/[<>]/g,' ').slice(0,500);
   const start = mealIsoDate_(options.weekStart || mealMonday_(new Date()));
-  // Dieselben Script Properties und derselbe GenerateContent-Endpunkt wie bei der vorhandenen Belegerkennung.
-  const model = props.getProperty('GEMINI_MODEL') || 'gemini-3.8-flash';
   const schema = {
     type:'OBJECT',
     properties:{
       recipes:{type:'ARRAY',items:{
         type:'OBJECT',
         properties:{
-          title:{type:'STRING'},
-          dayIndex:{type:'INTEGER'},
+          title:{type:'STRING'}, dayIndex:{type:'INTEGER'},
           mealType:{type:'STRING',enum:['Frühstück','Mittagessen','Abendessen']},
-          servings:{type:'INTEGER'},
-          prepMinutes:{type:'INTEGER'},
-          estimatedCostEur:{type:'NUMBER'},
-          category:{type:'STRING'},
-          cuisine:{type:'STRING'},
-          tags:{type:'STRING'},
+          servings:{type:'INTEGER'}, prepMinutes:{type:'INTEGER'},
+          estimatedCostEur:{type:'NUMBER'}, category:{type:'STRING'},
+          cuisine:{type:'STRING'}, tags:{type:'STRING'},
           ingredients:{type:'ARRAY',items:{type:'OBJECT',properties:{
             name:{type:'STRING'},amount:{type:'NUMBER'},unit:{type:'STRING'}
           },required:['name','amount','unit']}},
@@ -215,31 +213,15 @@ function generateAiMealRecipes(options) {
   } else {
     prompt = 'Erstelle genau 3 unterschiedliche, realistische und gut nachkochbare Rezeptvorschläge für '+mealType+' am '+['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'][dayIndex]+' in Deutschland. Alle Rezepte für '+servings+' Portionen. Wünsche: '+(preferences || 'preiswert, familienfreundlich und alltagstauglich')+'. Schreibe auf Deutsch. Verwende abwechslungsreiche, möglichst preiswerte Zutaten. Zutaten müssen einzeln mit plausiblen numerischen Mengen und metrischen Einheiten angegeben werden (g, kg, ml, l, Stück, EL, TL oder Prise); keine Mengen als Freitext. Schätze die gesamten Zutatenkosten je Rezept in Euro für alle angegebenen Portionen. prepMinutes ist eine realistische Zubereitungszeit. Setze bei allen drei Rezepten dayIndex auf '+dayIndex+' und mealType auf "'+mealType+'". Anleitungen in kurzen, klaren Schritten als Text. Gib ausschließlich das verlangte JSON zurück.';
   }
-  const payload = {
+  const call = callGemini_(models, apiKey, () => ({
     contents:[{role:'user',parts:[{text:prompt}]}],
     generationConfig:{
       responseMimeType:'application/json',
       responseSchema:schema,
       maxOutputTokens:12000
     }
-  };
-  const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(apiKey);
-  let response, status, body;
-  for (let attempt=0; attempt<3; attempt++) {
-    response=UrlFetchApp.fetch(url,{
-      method:'post',contentType:'application/json',payload:JSON.stringify(payload),muteHttpExceptions:true
-    });
-    status=response.getResponseCode();
-    body=response.getContentText();
-    if (status!==429 && status!==500 && status!==503 && status!==504) break;
-    if (attempt<2) Utilities.sleep(attempt===0?2000:5000);
-  }
-  if (status<200 || status>=300) {
-    let detail=body;
-    try { const parsed=JSON.parse(body); detail=parsed.error&&parsed.error.message?parsed.error.message:body; } catch(e) {}
-    throw new Error('Gemini API Fehler (HTTP '+status+'): '+String(detail).slice(0,500));
-  }
-  const result=JSON.parse(body);
+  }));
+  const result=JSON.parse(call.text);
   const parts=result.candidates&&result.candidates[0]&&result.candidates[0].content&&result.candidates[0].content.parts;
   const outputText=Array.isArray(parts)?parts.map(p=>p.text||'').join(''):'';
   if (!outputText) throw new Error('Gemini hat keine Rezeptdaten zurückgegeben. Bitte erneut versuchen.');
