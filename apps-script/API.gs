@@ -4,7 +4,7 @@ function apiFunctions_() {
     getInitData, getAppData, getFormData, saveExpense, updateExpense,
     deleteExpense, saveMonthlyBudget, getShoppingData, analyzeReceipt,
     saveShoppingPurchase, getInsights,
-    getMealData, searchMealRecipes, importMealRecipe,
+    getMealData, searchMealRecipes, importMealRecipe, generateAiMealRecipes, getMealAiStatus,
     saveOwnMealRecipe, saveMealPlan, buildMealShoppingList,
     getMealShoppingChecklist, saveMealShoppingCheck
   };
