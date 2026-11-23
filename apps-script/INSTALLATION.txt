@@ -1,0 +1,36 @@
+HAUSHALTSBUCH – KORRIGIERTE 5-BEREICHE-VERSION
+
+Die Navigation ist exakt:
+1. Erfassen – Ausgabe manuell erfassen und Beleg anhängen
+2. Statistik – Monatsübersicht, Vormonatsvergleich, Kategorien, letzte Buchungen, Jahresauswertung und darunter alle Buchungen mit Filtern/Bearbeiten/Löschen
+3. Essensplanung – Wochenplan, Rezeptdatenbank, eigene Rezepte und Touch-Drag-and-drop
+4. Einkaufsoptimierung – Kassenbons, Einkaufshistorie, Analyse bisheriger Einkäufe sowie gemeinsame Wochen-Einkaufsliste mit synchronisierten Häkchen
+5. Einstellungen – gemeinsames Monatsbudget
+
+DATEIEN
+- Index.html: vollständige neue Oberfläche
+- MealPlanner.gs: neue Funktionen für Rezepte, Wochenplan und gemeinsame Einkaufsliste
+- API.gs: ergänzte HTTP-API-Allowlist (für die direkte HTML-App nicht erforderlich)
+- Code.gs: Referenzkopie des bestehenden Backends. NICHT ersetzen, sofern deine bestehende Code.gs bereits die Haushaltsbuch-Funktionen enthält.
+
+EINBAU – BITTE IN DIESER REIHENFOLGE
+1. Im Apps-Script-Projekt zuerst eine Sicherung der vorhandenen Dateien erstellen.
+2. Die vorhandene Datei Index.html vollständig öffnen, alles markieren und durch den kompletten Inhalt aus Index.html ersetzen.
+3. Im Apps-Script-Editor links auf + klicken → Skript. Neue Datei exakt MealPlanner nennen. Den kompletten Inhalt aus MealPlanner.gs einfügen.
+4. Code.gs unverändert lassen. Sie enthält die bestehenden Buchungs-, Budget- und Einkaufsfunktionen.
+5. API.gs ist nur nötig, wenn du die zusätzliche HTTP-API verwendest. In diesem Fall die beigefügte API.gs vollständig übernehmen, sofern deine bisherige API.gs dieselbe API-Struktur hat. Den vorhandenen Script-Property-Wert API_TOKEN nicht löschen oder neu erzeugen.
+6. Speichern.
+7. Web-App über Bereitstellen → Neue Bereitstellung → Web-App aktualisieren/bereitstellen. Zugriffseinstellungen wie bisher belassen.
+8. Web-App auf beiden iPhones neu laden. Falls die alte Oberfläche im Cache bleibt, Safari-Tab schließen und erneut öffnen.
+
+DATEN-SCHUTZ / BESTANDSDATEN
+- Bestehende Buchungs- und Einkaufsblätter werden nicht gelöscht.
+- Beim ersten Aufruf der Essensplanung werden bei Bedarf die neuen Tabellen Rezepte, Wochenplan, Rezeptquellen und Einkaufscheckliste angelegt.
+- Die Einkaufscheckliste wird in Google Sheets gespeichert. Abgehakte Zutaten werden damit zwischen beiden iPhones synchronisiert.
+- Die bisherige Code.gs ist unverändert als Referenz beigelegt. Bitte nicht zusätzlich als zweite Code.gs anlegen.
+
+WICHTIGE HINWEISE
+- Die Oberfläche nutzt google.script.run und benötigt daher die bestehende Apps-Script-Web-App.
+- Die Einkaufsanalyse benötigt bereits erfasste Einkaufsbons/Produktpositionen. Bei zu wenigen Daten wird ein entsprechender Hinweis angezeigt.
+- Importierte TheMealDB-Rezepte liefern Mengen teils als Freitext; solche Zutaten können in der Einkaufsliste ohne genaue Mengenangabe erscheinen.
+- Der Quellcode wurde auf JavaScript-Syntax und die fünf getrennten Seiten geprüft. Eine Live-Prüfung in deinem Apps-Script-Konto kann ich ohne Zugriff auf dein Projekt nicht durchführen.
