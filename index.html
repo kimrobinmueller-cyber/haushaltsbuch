@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -222,9 +223,6 @@ nav span {
 .shopping-list-row { padding:12px 0; border-bottom:1px solid var(--line); }
 .confidence-low { color:#a45b00; font-weight:700; }
 
-.chip { display:inline-flex; align-items:center; gap:6px; padding:7px 11px; margin:6px 6px 0 0; border:1px solid var(--line); border-radius:20px; font-size:13px; font-weight:600; background:#fff; }
-.chip input { width:auto; margin:0; }
-
 .page { display:none; }
 .page.active { display:block; }
 .settings-note { margin-top:8px; line-height:1.45; }
@@ -398,7 +396,13 @@ nav span {
   .comparison-number { font-size:18px; }
   .comparison-values { gap:6px; }
 }
+
+/* Essensplaner */
+.meal-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.meal-days{display:grid;grid-template-columns:repeat(7,minmax(180px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px;touch-action:pan-x pan-y}.meal-day{background:#f8fbfd;border:1px solid var(--line);border-radius:14px;padding:10px;min-height:250px;min-width:180px}.meal-day h3{margin:0 0 8px;font-size:14px}.meal-slot{border:1px dashed #b9cbd5;border-radius:10px;padding:8px;margin:7px 0;min-height:54px;background:#fff}.meal-slot.over{background:#e8f6f5;border-color:#087f8c}.meal-slot-title{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px}.meal-chip{background:#eaf4f8;border:1px solid #cfe2eb;border-radius:9px;padding:8px;margin:5px 0;font-size:12px;cursor:grab;user-select:none;touch-action:none}.meal-chip.placeholder{background:#fff5e8;border-color:#f0d4a8}.meal-chip.dragging{opacity:.45}.meal-library{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}.meal-result{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;display:flex;gap:9px;align-items:center;touch-action:none}.meal-result img{width:52px;height:52px;object-fit:cover;border-radius:8px}.meal-result .meal-meta{min-width:0;flex:1}.meal-result strong{display:block;font-size:13px}.meal-result small{color:var(--muted)}.meal-drop-hint{font-size:11px;color:var(--muted)}.meal-touch-ghost{position:fixed;z-index:9999;pointer-events:none;opacity:.9;max-width:220px;box-shadow:0 8px 25px #0003}.meal-week-nav{display:flex;gap:8px;align-items:center}.meal-week-nav input{max-width:155px}@media(max-width:700px){.meal-days{grid-template-columns:repeat(7,minmax(78vw,1fr));scroll-snap-type:x proximity}.meal-day{scroll-snap-align:start;min-width:0}.meal-library{grid-template-columns:1fr}.meal-result{min-height:68px}.meal-toolbar button{padding:10px}}
+
 </style>
+  <script src="config.js"></script>
+  <script src="gas-shim.js"></script>
 </head>
 
 <body>
@@ -420,49 +424,6 @@ nav span {
 </header>
 
 <main>
-
-<!-- DASHBOARD -->
-
-
-<!-- BELEGERFASSUNG -->
-<section id="receiptCapturePage" class="page active">
-  <h2>Beleg erfassen</h2>
-  <p class="shopping-intro">Kassenbon fotografieren und die erkannten Produkte und Preise kontrollieren.</p>
-  <div class="card">
-    <strong>Kassenbon fotografieren</strong>
-    <p class="shopping-intro">Foto hochladen. Gemini liest Supermarkt, Datum, Produkte und Preise aus. Bitte decke vorher Kartendaten, Kundenkartennummern und andere persönliche Angaben auf dem Bon ab.</p>
-    <label for="shoppingPhoto">Kassenbon-Foto (JPG, PNG oder WebP)</label>
-    <input type="file" id="shoppingPhoto" accept="image/jpeg,image/png,image/webp" capture="environment">
-    <label style="display:flex;align-items:flex-start;gap:8px;margin-top:12px">
-      <input type="checkbox" id="receiptPrivacyConfirm" style="width:auto;margin:2px 0 0">
-      <span class="small">Ich habe sensible Angaben auf dem Foto vorher abgedeckt.</span>
-    </label>
-    <div id="shoppingStatus" class="status"></div>
-    <button class="full" id="analyzeReceiptButton" type="button" onclick="analyzeShoppingReceipt()">Kassenbon automatisch auslesen</button>
-  </div>
-
-  <div class="card" id="shoppingReview" style="display:none">
-    <div class="row"><strong>Ergebnis kontrollieren</strong><span class="small" id="shoppingModelLabel"></span></div>
-    <label>Supermarkt</label>
-    <input id="shoppingStore" placeholder="z. B. Aldi Süd">
-    <label>Filiale / Ort (optional)</label>
-    <input id="shoppingBranch" placeholder="z. B. Köngen">
-    <div class="grid">
-      <div><label>Einkaufsdatum</label><input type="date" id="shoppingDate"></div>
-      <div><label>Erfasst von</label><select id="shoppingPerson"><option>Kim</option><option>Julia</option><option>Gemeinsam</option></select></div>
-    </div>
-    <label>Bezahlte Gesamtsumme (€)</label>
-    <input type="number" id="shoppingTotal" min="0.01" step="0.01" inputmode="decimal">
-    <div class="shopping-summary"><strong>Erkannte Produkte</strong><strong id="shoppingItemCount">0</strong></div>
-    <div id="shoppingItems"></div>
-    <button class="full secondary" type="button" onclick="addShoppingItem()">＋ Produkt ergänzen</button>
-    <div class="shopping-summary"><span>Summe der Produktpositionen</span><strong id="shoppingItemsTotal">0,00 €</strong></div>
-    <input type="hidden" id="shoppingReceiptUrl">
-    <div id="shoppingSaveStatus" class="status"></div>
-    <button class="full" id="saveShoppingButton" type="button" onclick="saveShopping()">Einkauf bestätigen und speichern</button>
-  </div>
-  <button class="full secondary" type="button" onclick="newExpense()" style="margin-bottom:14px">＋ Ausgabe manuell erfassen</button>
-</section>
 
 <!-- ERFASSEN -->
 <section id="entry" class="page">
@@ -524,49 +485,43 @@ nav span {
   </div>
 </section>
 
-<!-- BUCHUNGEN -->
-<section id="transactions" class="page">
-  <h2>Buchungen</h2>
-
-  <div class="card">
-    <label>Monat</label>
-    <input type="month" id="bookingMonth"
-           onchange="renderTransactions()">
-
-    <label>Suche</label>
-    <input id="search"
-           placeholder="Händler oder Beschreibung"
-           oninput="renderTransactions()">
-
-    <label>Kategorie</label>
-    <select id="filterCategory"
-            onchange="renderTransactions()">
-      <option value="">Alle Kategorien</option>
-    </select>
-
-    <label>Erfasst von</label>
-    <select id="filterPerson"
-            onchange="renderTransactions()">
-      <option value="">Alle Personen</option>
-      <option>Kim</option>
-      <option>Julia</option>
-      <option>Gemeinsam</option>
-    </select>
-  </div>
-
-  <div class="card">
-    <div class="row">
-      <strong>Ergebnisse</strong>
-      <strong id="bookingTotal">0,00 €</strong>
-    </div>
-    <div id="bookingList"></div>
-  </div>
-</section>
-
-
-<!-- EINKAUFSOPTIMIERUNG -->
+<!-- EINKAUF: Einkaufsoptimierung und Essensplanung -->
 <section id="shopping" class="page">
-  <h2>Einkaufsliste &amp; Sparen</h2>
+  <h2>Einkaufsoptimierung</h2>
+  <div id="shoppingPanel">
+  <div class="card">
+    <strong>Kassenbon fotografieren</strong>
+    <p class="shopping-intro">Foto hochladen. Gemini liest Supermarkt, Datum, Produkte und Preise aus. Bitte decke vorher Kartendaten, Kundenkartennummern und andere persönliche Angaben auf dem Bon ab.</p>
+    <label for="shoppingPhoto">Kassenbon-Foto (JPG, PNG oder WebP; max. 7 MB)</label>
+    <input type="file" id="shoppingPhoto" accept="image/jpeg,image/png,image/webp" capture="environment">
+    <label style="display:flex;align-items:flex-start;gap:8px;margin-top:12px">
+      <input type="checkbox" id="receiptPrivacyConfirm" style="width:auto;margin:2px 0 0">
+      <span class="small">Ich habe sensible Angaben auf dem Foto vorher abgedeckt.</span>
+    </label>
+    <div id="shoppingStatus" class="status"></div>
+    <button class="full" id="analyzeReceiptButton" type="button" onclick="analyzeShoppingReceipt()">Kassenbon automatisch auslesen</button>
+  </div>
+
+  <div class="card" id="shoppingReview" style="display:none">
+    <div class="row"><strong>Ergebnis kontrollieren</strong><span class="small" id="shoppingModelLabel"></span></div>
+    <label>Supermarkt</label>
+    <input id="shoppingStore" placeholder="z. B. Aldi Süd">
+    <label>Filiale / Ort (optional)</label>
+    <input id="shoppingBranch" placeholder="z. B. Köngen">
+    <div class="grid">
+      <div><label>Einkaufsdatum</label><input type="date" id="shoppingDate"></div>
+      <div><label>Erfasst von</label><select id="shoppingPerson"><option>Kim</option><option>Julia</option><option>Gemeinsam</option></select></div>
+    </div>
+    <label>Bezahlte Gesamtsumme (€)</label>
+    <input type="number" id="shoppingTotal" min="0.01" step="0.01" inputmode="decimal">
+    <div class="shopping-summary"><strong>Erkannte Produkte</strong><strong id="shoppingItemCount">0</strong></div>
+    <div id="shoppingItems"></div>
+    <button class="full secondary" type="button" onclick="addShoppingItem()">＋ Produkt ergänzen</button>
+    <div class="shopping-summary"><span>Summe der Produktpositionen</span><strong id="shoppingItemsTotal">0,00 €</strong></div>
+    <input type="hidden" id="shoppingReceiptUrl">
+    <div id="shoppingSaveStatus" class="status"></div>
+    <button class="full" id="saveShoppingButton" type="button" onclick="saveShopping()">Einkauf bestätigen und speichern</button>
+  </div>
 
   <div class="card">
     <strong>Dieser Monat</strong>
@@ -581,95 +536,56 @@ nav span {
     <strong>Letzte Einkäufe</strong>
     <div id="shoppingHistory" class="small">Noch keine Einkäufe erfasst.</div>
   </div>
-
-  <div class="card">
-    <strong>Bald fällig (Prognose)</strong>
-    <div id="insightsForecast" class="small">Wird geladen …</div>
-  </div>
-  <div class="card">
-    <strong>Sparpotenzial nach Markt</strong>
-    <div id="insightsSavings" class="small">Wird geladen …</div>
-  </div>
-<!-- EINKAUFSPLANUNG -->
-<div class="card">
-  <h2 style="margin-top:0">Essensplanung & Einkaufsliste</h2>
-
-  <div class="card">
-    <strong>Geplante Gerichte</strong>
-    <label>Gericht hinzufügen</label>
-    <select id="mealPick"></select>
-    <label>Personen</label>
-    <input type="number" id="mealPersons" min="1" max="30" value="3">
-    <button class="full secondary" type="button" style="margin-top:9px" onclick="addMealToPlan()">＋ Zur Planung</button>
-    <div id="mealPlan" style="margin-top:10px"></div>
-    <label style="display:flex;align-items:center;gap:8px">
-      <input type="checkbox" id="mealTips" checked style="width:auto">
-      <span class="small">Tipps für Reste per KI</span>
-    </label>
-    <div id="mealStatus" class="status"></div>
-    <button class="full" id="mealListButton" type="button" onclick="makeShoppingList()">Einkaufsliste erstellen</button>
   </div>
 
-  <div class="card" id="mealListCard" style="display:none">
-    <div class="row"><strong>Einkaufsliste</strong>
-      <button class="secondary" type="button" style="padding:8px 11px" onclick="copyMealList()">Kopieren</button></div>
-    <div id="mealList"></div>
-  </div>
 
   <div class="card">
-    <strong>Vorschläge</strong>
-    <p class="small">Mit den Filtern eingrenzen. Leer gelassen werden alle Gerichte berücksichtigt.</p>
-    <div class="label">Kategorie</div><div id="chipCourses"></div>
-    <div class="label" style="margin-top:12px">Ernährung</div><div id="chipDiets"></div>
-    <label>Wunsch (optional, nur für KI-Ideen)</label>
-    <input id="suggestWish" placeholder="z. B. schnell, unter 30 Minuten">
-    <div class="grid" style="margin-top:12px">
-      <button class="secondary" type="button" onclick="showOwnDishes()">Aus meinen Gerichten</button>
-      <button type="button" id="suggestButton" onclick="suggestAI()">Neue Ideen (KI)</button>
-    </div>
-    <div id="suggestStatus" class="status"></div>
-    <div id="suggestList"></div>
+    <strong>Analyse bisheriger Einkäufe</strong>
+    <p class="small">Wiederkehrende Lebensmittel und mögliche Preisunterschiede aus deinen erfassten Einkaufsbons.</p>
+    <div id="shoppingInsights" class="small">Analyse wird geladen …</div>
+  </div>
+  <div class="card" id="mealShoppingCard">
+    <div class="row"><strong>Wocheneinkauf aus dem Essensplan</strong><button class="secondary" type="button" onclick="showMealShoppingList()">Liste aktualisieren</button></div>
+    <p class="small">Zutaten aus den geplanten Rezepten. Bei externen Rezepten können Mengenangaben unvollständig sein.</p>
+    <div id="mealShoppingItems"><span class="muted">Noch keine Einkaufsliste geladen.</span></div>
   </div>
 
-  <div class="card">
-    <strong>Neues Gericht</strong>
-    <label>Name</label>
-    <input id="newDishName" placeholder="z. B. Spaghetti Bolognese">
-    <label>Portionen für diese Zutatenliste</label>
-    <input type="number" id="newDishPortions" min="1" value="4">
-    <div id="newDishStatus" class="status"></div>
-    <button class="full" id="newDishButton" type="button" style="margin-top:12px" onclick="createDishDraft()">Zutaten per KI erstellen</button>
-    <div id="newDishReview" style="display:none"></div>
-  </div>
-</div>
 </section>
 
-
-<!-- STATISTIK -->
-<section id="statistics" class="page">
-  <h2>Statistik</h2>
-
+<!-- ESSENSPLANUNG -->
+  <section id="meals" class="page">
+    <h2>Essensplaner</h2>
   <div class="card">
-    <label>Auswertungsjahr</label>
-    <select id="yearSelect"
-            onchange="renderStatistics()"></select>
-
-    <strong>Monatlicher Ausgabenverlauf</strong>
-    <div id="yearChart"></div>
+    <div class="meal-toolbar">
+      <div class="meal-week-nav"><button class="secondary" type="button" onclick="changeMealWeek(-7)">‹</button><input type="date" id="mealWeekStart" onchange="loadMealWeek()"><button class="secondary" type="button" onclick="changeMealWeek(7)">›</button></div>
+      <button type="button" onclick="saveMealWeek()">Wochenplan speichern</button>
+      <button class="secondary" type="button" onclick="showPage('shopping');showMealShoppingList()">Zur Einkaufsliste</button>
+    </div>
+    <p class="small">Gerichte länger antippen und in einen Tag / eine Mahlzeit ziehen. Das funktioniert auch auf dem iPhone. Du kannst mehrere Einträge pro Mahlzeit ablegen.</p>
+    <div id="mealWeekStatus" class="status"></div>
+    <div id="mealWeekGrid" class="meal-days"></div>
   </div>
-
   <div class="card">
-    <strong>Jahresübersicht</strong>
-    <div id="yearTotal" class="big">0,00 €</div>
-    <div id="yearCategories"></div>
+    <strong>Rezeptdatenbank</strong>
+    <div class="meal-toolbar" style="margin-top:10px"><input id="mealSearch" placeholder="Gericht oder Zutat suchen" style="flex:1;min-width:160px"><button type="button" onclick="searchMealLibrary()">Suchen</button></div>
+    <div id="mealSearchStatus" class="small"></div>
+    <div id="mealRecipeResults" class="meal-library"></div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+    <strong>Eigenes Rezept hinzufügen</strong>
+    <label>Gericht</label><input id="ownMealTitle" placeholder="z. B. Gemüse-Lasagne">
+    <div class="grid"><div><label>Kategorie</label><select id="ownMealCategory"><option>Frühstück</option><option>Mittagessen</option><option>Abendessen</option><option>Snack</option></select></div><div><label>Portionen</label><input type="number" id="ownMealServings" min="1" value="4"></div></div>
+    <label>Zutaten (eine pro Zeile, optional: Menge Einheit Zutat)</label><textarea id="ownMealIngredients" rows="4" placeholder="2 Stück Karotten&#10;200 g Nudeln"></textarea>
+    <label>Zubereitung</label><textarea id="ownMealInstructions" rows="3"></textarea>
+    <button class="full" type="button" onclick="saveOwnMealFromForm()">Eigenes Rezept speichern</button>
   </div>
+  </section>
+
+<!-- STATISTIKEN: Monatsübersicht und Auswertungen -->
+<section id="statistics" class="page active">
+  <h2>Statistiken</h2>
 
 
-  <div class="card">
-    <strong>Letzte Einkäufe</strong>
-    <div id="shoppingHistoryStats" class="small">Wird geladen …</div>
-  </div>
-
+  <div class="row" style="margin:5px 0 14px">
 
   <div class="row" style="margin:5px 0 14px">
     <strong>Monatsübersicht</strong>
@@ -678,7 +594,7 @@ nav span {
               style="padding:9px 11px" onclick="loadData()"
               aria-label="Daten aktualisieren">↻</button>
       <input type="month" id="dashMonth"
-             style="width:145px" onchange="changeMonth()">
+             style="width:145px" onchange="loadData()">
     </div>
   </div>
 
@@ -743,16 +659,7 @@ nav span {
     </div>
   </div>
 
-  <div class="grid">
-    <button class="full" onclick="showPage('entry')">
-      ＋ Ausgabe erfassen
-    </button>
-
-    <button class="full secondary"
-            onclick="showPage('transactions')">
-      Buchungen ansehen
-    </button>
-  </div>
+  <button class="full" onclick="newExpense()">＋ Ausgabe erfassen</button>
 
   <div class="card" style="margin-top:15px">
     <strong>Ausgaben nach Kategorien</strong>
@@ -763,6 +670,60 @@ nav span {
     <strong>Letzte Buchungen</strong>
     <div id="recent"></div>
   </div>
+
+
+  <div class="card">
+    <label>Auswertungsjahr</label>
+    <select id="yearSelect"
+            onchange="renderStatistics()"></select>
+
+    <strong>Monatlicher Ausgabenverlauf</strong>
+    <div id="yearChart"></div>
+  </div>
+
+  <div class="card">
+    <strong>Jahresübersicht</strong>
+    <div id="yearTotal" class="big">0,00 €</div>
+    <div id="yearCategories"></div>
+  </div>
+
+<div id="allBookings">
+  <h3 style="margin-top:0">Alle Buchungen</h3>
+
+  <div class="card">
+    <label>Monat</label>
+    <input type="month" id="bookingMonth"
+           onchange="renderTransactions()">
+
+    <label>Suche</label>
+    <input id="search"
+           placeholder="Händler oder Beschreibung"
+           oninput="renderTransactions()">
+
+    <label>Kategorie</label>
+    <select id="filterCategory"
+            onchange="renderTransactions()">
+      <option value="">Alle Kategorien</option>
+    </select>
+
+    <label>Erfasst von</label>
+    <select id="filterPerson"
+            onchange="renderTransactions()">
+      <option value="">Alle Personen</option>
+      <option>Kim</option>
+      <option>Julia</option>
+      <option>Gemeinsam</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <strong>Ergebnisse</strong>
+      <strong id="bookingTotal">0,00 €</strong>
+    </div>
+    <div id="bookingList"></div>
+  </div>
+</div>
 </section>
 
 <!-- EINSTELLUNGEN -->
@@ -791,23 +752,13 @@ nav span {
 
 </main>
 
-<!-- NAVIGATION -->
+<!-- NAVIGATION: genau fünf Hauptbereiche -->
 <nav>
-  <button class="active" data-page="receiptCapturePage" onclick="showPage('receiptCapturePage')">
-    <span>📷</span>Erfassung
-  </button>
-  <button data-page="statistics" onclick="showPage('statistics')">
-    <span>◔</span>Statistiken
-  </button>
-  <button data-page="shopping" onclick="showPage('shopping')">
-    <span>🛒</span>Einkauf
-  </button>
-  <button data-page="transactions" onclick="showPage('transactions')">
-    <span>▤</span>Buchungen
-  </button>
-  <button data-page="settings" onclick="showPage('settings')">
-    <span>⚙</span>Einstellungen
-  </button>
+  <button data-page="entry" onclick="newExpense()"><span>＋</span>Erfassen</button>
+  <button class="active" data-page="statistics" onclick="showPage('statistics')"><span>◔</span>Statistik</button>
+  <button data-page="meals" onclick="showPage('meals')"><span>🍲</span>Essensplanung</button>
+  <button data-page="shopping" onclick="showPage('shopping')"><span>🛒</span>Einkaufsoptimierung</button>
+  <button data-page="settings" onclick="showPage('settings')"><span>⚙</span>Einstellungen</button>
 </nav>
 
 <!-- EDIT MODAL -->
@@ -857,10 +808,6 @@ nav span {
     </form>
   </div>
 </div>
-
-<!-- Verbindung zu Apps Script (nur bei GitHub Pages aktiv) -->
-<script src="config.js"></script>
-<script src="gas-shim.js"></script>
 
 <script>
 
@@ -930,19 +877,20 @@ function showPage(page) {
     .forEach(b=>{
       b.classList.toggle(
         'active',
-        b.dataset.page===(page==='meals' ? 'shopping' : page)
+        b.dataset.page===page
       );
     });
 
-  if(page==='transactions') renderTransactions();
-  if(page==='statistics') { renderStatistics(); loadShoppingData(); }
-  if(page==='shopping') { loadShoppingData(); loadInsights(); loadMeals(); }
+  if(page==='statistics') { renderStatistics(); renderTransactions(); }
+  if(page==='shopping') { loadShoppingData(); showMealShoppingList(); }
+  if(page==='meals') loadMealWeek();
   if(page==='settings' && appData) {
     document.getElementById('budgetInput').value =
       Number(appData.budget || 0).toFixed(2);
     showMessage('budgetStatus','','');
   }
 }
+
 
 function newExpense() {
   resetForm();
@@ -965,11 +913,6 @@ function loadData() {
     })
     .withFailureHandler(showError)
     .getAppData(month);
-}
-
-// Monatswechsel rechnet lokal, ohne Serveraufruf
-function changeMonth() {
-  if(appData) applyTransactionChange(null, null);
 }
 
 
@@ -1055,999 +998,3 @@ function saveBudget() {
       showMessage('budgetStatus','Budget wurde gespeichert.','ok');
       button.disabled = false;
       button.textContent = 'Budget speichern';
-    })
-    .withFailureHandler(error => {
-      showMessage('budgetStatus',error.message || String(error),'error');
-      button.disabled = false;
-      button.textContent = 'Erneut versuchen';
-    })
-    .saveMonthlyBudget(value);
-}
-
-// INITIALISIERUNG (ein einziger Serveraufruf beim Start)
-function initialize() {
-  document.getElementById('dashMonth').value = currentMonth();
-  document.getElementById('bookingMonth').value = currentMonth();
-  document.getElementById('date').value = localDate();
-
-  google.script.run
-    .withSuccessHandler(init=>{
-      const data=init.form;
-      formCategories=data.categories || [];
-
-      ['category','editCategory'].forEach(id=>{
-        const el=document.getElementById(id);
-        el.innerHTML='';
-
-        formCategories.forEach(c=>{
-          const op=document.createElement('option');
-          op.value=c;
-          op.textContent=c;
-          el.appendChild(op);
-        });
-      });
-
-      const filter=document.getElementById('filterCategory');
-
-      formCategories.forEach(c=>{
-        const op=document.createElement('option');
-        op.value=c;
-        op.textContent=c;
-        filter.appendChild(op);
-      });
-
-      appData=init.app;
-      renderDashboard();
-      renderTransactions();
-      renderStatistics();
-    })
-    .withFailureHandler(showError)
-    .getInitData(currentMonth());
-
-  const years=document.getElementById('yearSelect');
-  const y=new Date().getFullYear();
-
-  for(let i=y-3;i<=y+1;i++){
-    const op=document.createElement('option');
-    op.value=i;
-    op.textContent=i;
-
-    if(i===y) op.selected=true;
-    years.appendChild(op);
-  }
-}
-
-
-// DASHBOARD
-function renderDashboard() {
-  const d=appData;
-
-  document.getElementById('total').textContent=money(d.total);
-  document.getElementById('budget').textContent=money(d.budget);
-  document.getElementById('remaining').textContent=money(d.remaining);
-
-  const pct=d.budget>0 ? Math.round(d.total/d.budget*100) : 0;
-
-  document.getElementById('percent').textContent=pct+' %';
-  document.getElementById('progress').style.width=Math.min(pct,100)+'%';
-
-  document.getElementById('categories').innerHTML =
-    (d.categories || []).map(c=>{
-      const p=d.total>0 ? c.amount/d.total*100 : 0;
-
-      return `<div class="category">
-        <div class="row">
-          <span>${escapeHtml(c.name)}</span>
-          <strong>${money(c.amount)}</strong>
-        </div>
-        <div class="bar">
-          <div style="width:${p}%"></div>
-        </div>
-      </div>`;
-    }).join('');
-
-  document.getElementById('recent').innerHTML =
-    (d.transactions || []).slice(0,5).map(transactionHtml).join('') ||
-    '<div class="empty">Noch keine Buchungen in diesem Monat.</div>';
-
-  const selectedMonth =
-    document.getElementById('dashMonth').value || currentMonth();
-
-  const previousMonth=monthKeyOffset(selectedMonth,-1);
-
-  const all=Array.isArray(d.allTransactions) ? d.allTransactions : [];
-
-  const previousTotal=all
-    .filter(t=>t.date && t.date.startsWith(previousMonth))
-    .reduce((sum,t)=>sum+Number(t.amount || 0),0);
-
-  document.getElementById('compareCurrentLabel').textContent=monthLabel(selectedMonth);
-  document.getElementById('comparePreviousLabel').textContent=monthLabel(previousMonth);
-  document.getElementById('compareCurrent').textContent=money(d.total);
-  document.getElementById('comparePrevious').textContent=money(previousTotal);
-
-  const changeEl=document.getElementById('compareChange');
-  const hintEl=document.getElementById('compareHint');
-
-  changeEl.className='comparison-change neutral';
-
-  if(previousTotal===0 && d.total===0) {
-    changeEl.textContent='Noch keine Ausgaben in beiden Monaten';
-    hintEl.textContent='Sobald Buchungen vorhanden sind, erscheint hier der Vergleich.';
-  } else if(previousTotal===0) {
-    changeEl.textContent='Noch keine Vergleichsbasis im Vormonat';
-    hintEl.textContent='Im Vormonat wurden keine Ausgaben gefunden.';
-  } else {
-    const difference=d.total-previousTotal;
-    const percentChange=difference/previousTotal*100;
-
-    const direction=difference>0 ? 'mehr' : difference<0 ? 'weniger' : 'gleich viel';
-
-    changeEl.className='comparison-change ' +
-      (difference>0 ? 'up' : difference<0 ? 'down' : 'neutral');
-
-    changeEl.textContent=
-      (difference>0 ? '▲ ' : difference<0 ? '▼ ' : '• ') +
-      money(Math.abs(difference))+' '+direction+' ('+
-      Math.abs(percentChange).toLocaleString('de-DE',{
-        maximumFractionDigits:1
-      })+' %)';
-
-    hintEl.textContent=difference>0
-      ? 'Ihr habt in diesem Monat bisher mehr ausgegeben als im Vormonat.'
-      : difference<0
-        ? 'Ihr habt in diesem Monat bisher weniger ausgegeben als im Vormonat.'
-        : 'Die Ausgaben sind in beiden Monaten gleich hoch.';
-  }
-}
-
-
-// BUCHUNGSDARSTELLUNG
-function transactionHtml(t) {
-  return `<div class="transaction">
-    <div class="icon">🛒</div>
-    <div class="transaction-info">
-      <strong>${escapeHtml(t.description)}</strong>
-      <small>
-        ${escapeHtml(t.category)}
-        · ${formatDate(t.date)}
-        · ${escapeHtml(t.person)}
-      </small>
-    </div>
-    <div class="amount">${money(t.amount)}</div>
-  </div>`;
-}
-
-
-// BUCHUNGEN FILTERN
-function renderTransactions() {
-  if(!appData) return;
-
-  const month=document.getElementById('bookingMonth').value;
-  const search=document.getElementById('search').value.toLowerCase();
-  const cat=document.getElementById('filterCategory').value;
-  const person=document.getElementById('filterPerson').value;
-
-  const list=(appData.allTransactions || []).filter(t=>
-    (!month || (t.date && t.date.startsWith(month))) &&
-    (!search || String(t.description).toLowerCase().includes(search)) &&
-    (!cat || t.category===cat) &&
-    (!person || t.person===person)
-  );
-
-  document.getElementById('bookingTotal').textContent =
-    money(list.reduce((s,t)=>s+Number(t.amount || 0),0));
-
-  document.getElementById('bookingList').innerHTML =
-    list.map(t=>`
-      <div>
-        ${transactionHtml(t)}
-        <div class="actions">
-          <button class="secondary"
-                  onclick="editExpense('${escapeHtml(t.id)}')">
-            Bearbeiten
-          </button>
-          <button class="danger"
-                  onclick="removeExpense('${escapeHtml(t.id)}')">
-            Löschen
-          </button>
-          ${t.receipt
-            ? `<a href="${escapeHtml(t.receipt)}"
-                  target="_blank" rel="noopener">Beleg</a>`
-            : ''}
-        </div>
-      </div>
-    `).join('') || '<div class="empty">Keine passenden Buchungen.</div>';
-}
-
-
-// STATISTIK
-function renderStatistics() {
-  if(!appData) return;
-
-  const year=String(document.getElementById('yearSelect').value);
-
-  const months=Array.from({length:12},(_,i)=>{
-    const key=year+'-'+String(i+1).padStart(2,'0');
-
-    return {
-      key,
-      label:new Date(Number(year),i,1)
-        .toLocaleDateString('de-DE',{month:'short'}),
-      value:appData.monthlyTotals[key] || 0
-    };
-  });
-
-  const max=Math.max(...months.map(m=>m.value),1);
-
-  document.getElementById('yearChart').innerHTML=`
-    <div style="display:grid;
-                grid-template-columns:repeat(6,1fr);
-                gap:9px;margin-top:18px">
-      ${months.map(m=>`
-        <div style="text-align:center">
-          <div style="height:125px;
-                      display:flex;
-                      align-items:end;
-                      background:#f0f3f7;
-                      border-radius:7px;
-                      overflow:hidden">
-            <div title="${money(m.value)}"
-                 style="width:100%;
-                        height:${m.value/max*100}%;
-                        background:linear-gradient(180deg,#2477c5,#087f8c);
-                        border-radius:7px 7px 0 0">
-            </div>
-          </div>
-          <small>${m.label}</small>
-          <div style="font-size:10px;color:#718096">
-            ${Math.round(m.value)} €
-          </div>
-        </div>
-      `).join('')}
-    </div>`;
-
-  const yearTransactions=(appData.allTransactions || [])
-    .filter(t=>t.date && t.date.startsWith(year));
-
-  const total=yearTransactions.reduce(
-    (s,t)=>s+Number(t.amount || 0),0
-  );
-
-  document.getElementById('yearTotal').textContent=money(total);
-
-  const cats={};
-
-  yearTransactions.forEach(t=>{
-    cats[t.category]=(cats[t.category] || 0)+Number(t.amount || 0);
-  });
-
-  document.getElementById('yearCategories').innerHTML =
-    Object.entries(cats)
-      .sort((a,b)=>b[1]-a[1])
-      .map(([name,value])=>`
-        <div class="row"
-             style="padding:10px 0;border-bottom:1px solid #eee">
-          <span>${escapeHtml(name)}</span>
-          <strong>${money(value)}</strong>
-        </div>
-      `).join('') || '<div class="empty">Noch keine Jahresdaten.</div>';
-}
-
-
-// NEUE BUCHUNG SPEICHERN
-function submitExpense(event) {
-  event.preventDefault();
-
-  const button=document.getElementById('saveButton');
-  button.disabled=true;
-  button.textContent='Speichert …';
-
-  readReceipt(document.getElementById('receipt').files[0])
-    .then(receipt=>{
-      const payload={
-        date:document.getElementById('date').value,
-        description:document.getElementById('description').value,
-        amount:document.getElementById('amount').value,
-        category:document.getElementById('category').value,
-        person:document.getElementById('person').value,
-        payment:document.getElementById('payment').value,
-        receipt
-      };
-
-      google.script.run
-        .withSuccessHandler(result=>{
-          showMessage('formStatus',result.message,'ok');
-          applyTransactionChange(result.transaction);
-          resetForm();
-          button.disabled=false;
-          button.textContent='Ausgabe speichern';
-        })
-        .withFailureHandler(error=>{
-          showMessage('formStatus',error.message,'error');
-          button.disabled=false;
-          button.textContent='Erneut versuchen';
-        })
-        .saveExpense(payload);
-    })
-    .catch(error=>{
-      showMessage('formStatus',error.message,'error');
-      button.disabled=false;
-      button.textContent='Ausgabe speichern';
-    });
-}
-
-
-// BUCHUNG BEARBEITEN
-function editExpense(id) {
-  const t=(appData.allTransactions || []).find(x=>x.id===id);
-  if(!t) return;
-
-  document.getElementById('editId').value=t.id;
-  document.getElementById('editDate').value=t.date;
-  document.getElementById('editDescription').value=t.description;
-  document.getElementById('editAmount').value=String(t.amount).replace('.',',');
-  document.getElementById('editCategory').value=t.category;
-  document.getElementById('editPerson').value=t.person;
-  document.getElementById('editPayment').value=t.payment;
-
-  editingReceipt=!!t.receipt;
-  document.getElementById('editModal').style.display='block';
-}
-
-
-// ÄNDERUNGEN SPEICHERN
-function submitEdit(event) {
-  event.preventDefault();
-
-  const payload={
-    id:document.getElementById('editId').value,
-    date:document.getElementById('editDate').value,
-    description:document.getElementById('editDescription').value,
-    amount:document.getElementById('editAmount').value,
-    category:document.getElementById('editCategory').value,
-    person:document.getElementById('editPerson').value,
-    payment:document.getElementById('editPayment').value,
-    keepReceipt:editingReceipt
-  };
-
-  google.script.run
-    .withSuccessHandler(r=>{
-      closeModal();
-      applyTransactionChange(r.transaction);
-    })
-    .withFailureHandler(e=>
-      showMessage('editStatus',e.message,'error')
-    )
-    .updateExpense(payload);
-}
-
-
-// BUCHUNG LÖSCHEN
-function removeExpense(id) {
-  if(!confirm('Möchtest du diese Buchung wirklich löschen?')) return;
-
-  google.script.run
-    .withSuccessHandler(result=>{
-      applyTransactionChange(null, result.id || id);
-    })
-    .withFailureHandler(showError)
-    .deleteExpense(id);
-}
-
-
-// MODAL SCHLIESSEN
-function closeModal() {
-  document.getElementById('editModal').style.display='none';
-}
-
-
-// FORMULAR ZURÜCKSETZEN
-function resetForm() {
-  document.getElementById('expenseForm').reset();
-  document.getElementById('date').value=localDate();
-  showMessage('formStatus','','');
-}
-
-
-// BELEG LESEN
-function readReceipt(file) {
-  if(!file) return Promise.resolve(null);
-
-  if(file.size>8*1024*1024) {
-    return Promise.reject(new Error('Beleg maximal 8 MB.'));
-  }
-
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-
-    reader.onload=()=>resolve({
-      name:file.name,
-      mimeType:file.type,
-      data:String(reader.result).split(',')[1]
-    });
-
-    reader.onerror=reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-// FOTO VOR DEM UPLOAD VERKLEINERN (schneller, kleinere Datei)
-function compressImage(file, maxSide, quality) {
-  maxSide = maxSide || 2000;
-  quality = quality || 0.75;
-  return new Promise(function (resolve, reject) {
-    const img = new Image();
-    img.onload = function () {
-      const s = Math.min(1, maxSide / Math.max(img.width, img.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(img.width * s);
-      c.height = Math.round(img.height * s);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(img.src);
-      resolve({
-        name: file.name.replace(/\.\w+$/, '') + '.jpg',
-        mimeType: 'image/jpeg',
-        data: c.toDataURL('image/jpeg', quality).split(',')[1]
-      });
-    };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
-  });
-}
-
-
-// STATUSMELDUNGEN
-function showMessage(id,message,type) {
-  const el=document.getElementById(id);
-  el.textContent=message;
-  el.className='status '+(type || '');
-}
-
-
-// FEHLER
-function showError(e) {
-  alert(e.message || String(e));
-}
-
-
-// DATUM FORMATIEREN
-function formatDate(value) {
-  if(!value) return '';
-
-  return new Date(value+'T12:00:00')
-    .toLocaleDateString('de-DE');
-}
-
-
-// HTML SICHER AUSGEBEN
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g,c=>({
-    '&':'&amp;',
-    '<':'&lt;',
-    '>':'&gt;',
-    '"':'&quot;',
-    "'":'&#39;'
-  }[c]));
-}
-
-
-// Beim Zurückkehren zur App Daten vom gemeinsamen Sheet abgleichen.
-let lastVisibilityRefresh = 0;
-document.addEventListener('visibilitychange', () => {
-  if(document.visibilityState !== 'visible') return;
-  const now = Date.now();
-  if(now - lastVisibilityRefresh < 90000) return;
-  lastVisibilityRefresh = now;
-  if(appData) loadData();
-});
-
-
-
-// ================================================================
-// KASSENBON / EINKAUFSOPTIMIERUNG
-// ================================================================
-let shoppingReceiptUrl = '';
-let shoppingItemsState = [];
-
-function analyzeShoppingReceipt() {
-  const file = document.getElementById('shoppingPhoto').files[0];
-  if (!file) { showMessage('shoppingStatus','Bitte zuerst ein Kassenbon-Foto auswählen.','error'); return; }
-  if (!document.getElementById('receiptPrivacyConfirm').checked) {
-    showMessage('shoppingStatus','Bitte bestätige, dass sensible Angaben abgedeckt wurden.','error'); return;
-  }
-  if (file.size > 25 * 1024 * 1024) { showMessage('shoppingStatus','Das Foto ist zu groß.','error'); return; }
-  const button = document.getElementById('analyzeReceiptButton');
-  button.disabled = true; button.textContent = 'Kassenbon wird analysiert …';
-  showMessage('shoppingStatus','Foto wird an Gemini übertragen. Das kann einen Moment dauern.','');
-  compressImage(file).then(receipt => new Promise((resolve,reject) => {
-    google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).analyzeReceipt(receipt);
-  })).then(result => {
-    shoppingReceiptUrl = result.receiptUrl || '';
-    document.getElementById('shoppingStore').value = result.store || '';
-    document.getElementById('shoppingBranch').value = result.branch || '';
-    document.getElementById('shoppingDate').value = result.date || localDate();
-    document.getElementById('shoppingTotal').value = Number(result.total || 0).toFixed(2);
-    document.getElementById('shoppingReceiptUrl').value = shoppingReceiptUrl;
-    document.getElementById('shoppingModelLabel').textContent = result.model || 'Gemini';
-    shoppingItemsState = Array.isArray(result.items) ? result.items : [];
-    renderShoppingItems();
-    document.getElementById('shoppingReview').style.display = 'block';
-    showMessage('shoppingStatus','Kassenbon erkannt. Bitte alle Produkte und Preise kontrollieren.','ok');
-    document.getElementById('shoppingReview').scrollIntoView({behavior:'smooth',block:'start'});
-  }).catch(error => {
-    showMessage('shoppingStatus',error.message || String(error),'error');
-  }).finally(() => {
-    button.disabled = false; button.textContent = 'Erneut auslesen';
-  });
-}
-
-function renderShoppingItems() {
-  const host = document.getElementById('shoppingItems');
-  host.innerHTML = shoppingItemsState.map((item,index) => `
-    <div class="shopping-item" data-index="${index}">
-      <input class="item-name" data-field="name" aria-label="Produktname" value="${escapeHtml(item.productName || item.name || '')}" placeholder="Produktname">
-      <input data-field="quantity" type="number" min="0" step="0.01" aria-label="Menge" value="${Number(item.quantity || 1)}">
-      <input data-field="unit" aria-label="Einheit" value="${escapeHtml(item.unit || 'Stk.')}" placeholder="Einheit">
-      <input data-field="unitPrice" type="number" step="0.01" aria-label="Einzelpreis" value="${Number(item.unitPrice || 0).toFixed(2)}" placeholder="Einzelpreis">
-      <input data-field="lineTotal" type="number" step="0.01" aria-label="Positionssumme" value="${Number(item.lineTotal || 0).toFixed(2)}" placeholder="Summe">
-      <select class="item-category" data-field="category" aria-label="Produktbereich">
-        <option ${item.category==='Lebensmittel'?'selected':''}>Lebensmittel</option>
-        <option ${item.category==='Haushalt/Drogerie'?'selected':''}>Haushalt/Drogerie</option>
-        <option ${item.category==='Sonstiges'?'selected':''}>Sonstiges</option>
-      </select>
-      <button class="remove-item" type="button" onclick="removeShoppingItem(${index})">Entfernen</button>
-      ${Number(item.confidence || 0) < 0.65 ? '<div class="small confidence-low">Bitte besonders sorgfältig prüfen – unsichere Erkennung</div>' : ''}
-    </div>`).join('');
-  document.getElementById('shoppingItemCount').textContent = shoppingItemsState.length + ' Positionen';
-  updateShoppingItemsTotal();
-  host.querySelectorAll('input,select').forEach(el => el.addEventListener('input', updateShoppingItemsTotal));
-}
-
-function collectShoppingItems() {
-  return [...document.querySelectorAll('#shoppingItems .shopping-item')].map(row => ({
-    name:row.querySelector('[data-field="name"]').value.trim(),
-    originalName:row.querySelector('[data-field="name"]').value.trim(),
-    quantity:Number(row.querySelector('[data-field="quantity"]').value) || 1,
-    unit:row.querySelector('[data-field="unit"]').value.trim() || 'Stk.',
-    unitPrice:Number(row.querySelector('[data-field="unitPrice"]').value) || 0,
-    lineTotal:Number(row.querySelector('[data-field="lineTotal"]').value) || 0,
-    category:row.querySelector('[data-field="category"]').value,
-    confidence:1
-  }));
-}
-
-function updateShoppingItemsTotal() {
-  const total = collectShoppingItems().reduce((sum,item) => sum + item.lineTotal,0);
-  document.getElementById('shoppingItemsTotal').textContent = money(total);
-}
-
-function addShoppingItem() {
-  shoppingItemsState = collectShoppingItems();
-  shoppingItemsState.push({productName:'',quantity:1,unit:'Stk.',unitPrice:0,lineTotal:0,category:'Lebensmittel',confidence:1});
-  renderShoppingItems();
-}
-
-function removeShoppingItem(index) {
-  shoppingItemsState = collectShoppingItems();
-  shoppingItemsState.splice(index,1);
-  renderShoppingItems();
-}
-
-function saveShopping() {
-  const items = collectShoppingItems();
-  const payload = {
-    date:document.getElementById('shoppingDate').value,
-    store:document.getElementById('shoppingStore').value.trim(),
-    branch:document.getElementById('shoppingBranch').value.trim(),
-    person:document.getElementById('shoppingPerson').value,
-    total:document.getElementById('shoppingTotal').value,
-    receiptUrl:document.getElementById('shoppingReceiptUrl').value,
-    items
-  };
-  if (!payload.store || !payload.date || !payload.total || !items.length || items.some(i=>!i.name)) {
-    showMessage('shoppingSaveStatus','Bitte Datum, Supermarkt, Gesamtsumme und alle Produktnamen prüfen.','error'); return;
-  }
-  const button = document.getElementById('saveShoppingButton');
-  button.disabled = true; button.textContent = 'Speichert …';
-  google.script.run.withSuccessHandler(result => {
-    showMessage('shoppingSaveStatus','Einkauf gespeichert. Die Gesamtsumme wurde einmalig ins Haushaltsbuch übernommen.','ok');
-    if (result.transaction) applyTransactionChange(result.transaction);
-    document.getElementById('shoppingReview').style.display = 'none';
-    document.getElementById('shoppingPhoto').value = '';
-    document.getElementById('receiptPrivacyConfirm').checked = false;
-    shoppingItemsState = []; shoppingReceiptUrl = '';
-    loadShoppingData();
-    loadInsights();
-    button.disabled = false; button.textContent = 'Einkauf bestätigen und speichern';
-  }).withFailureHandler(error => {
-    showMessage('shoppingSaveStatus',error.message || String(error),'error');
-    button.disabled = false; button.textContent = 'Erneut versuchen';
-  }).saveShoppingPurchase(payload);
-}
-
-function loadShoppingData() {
-  google.script.run.withSuccessHandler(data => {
-    document.getElementById('shoppingMonthTotal').textContent = money(data.monthTotal);
-    document.getElementById('shoppingFoodTotal').textContent = money(data.foodTotal);
-    document.getElementById('shoppingHouseholdTotal').textContent = money(data.householdTotal);
-    document.getElementById('shoppingItemCountMonth').textContent = String(data.itemCount || 0);
-    const historyHtml = (data.purchases || []).map(p => `
-      <div class="shopping-list-row">
-        <div class="row"><strong>${escapeHtml(p.store)}</strong><strong>${money(p.total)}</strong></div>
-        <div class="small">${formatDate(p.date)} · ${escapeHtml(p.person)}${p.branch ? ' · '+escapeHtml(p.branch) : ''}</div>
-        ${p.receiptUrl ? `<a href="${escapeHtml(p.receiptUrl)}" target="_blank" rel="noopener">Kassenbon in Google Drive öffnen</a>` : ''}
-      </div>`).join('') || 'Noch keine Einkäufe erfasst.';
-    document.getElementById('shoppingHistory').innerHTML = historyHtml;
-    const statsHistory = document.getElementById('shoppingHistoryStats');
-    if (statsHistory) statsHistory.innerHTML = historyHtml;
-  }).withFailureHandler(error => showMessage('shoppingStatus',error.message || String(error),'error')).getShoppingData();
-}
-
-
-// ================================================================
-// AUSWERTUNG: Prognose + Sparpotenzial
-// ================================================================
-function loadInsights() {
-  google.script.run.withSuccessHandler(d => {
-    document.getElementById('insightsForecast').innerHTML =
-      (d.forecast || []).map(f => {
-        const when = f.daysLeft < 0 ? 'überfällig (' + Math.abs(f.daysLeft) + ' T)'
-          : f.daysLeft === 0 ? 'heute' : 'in ' + f.daysLeft + ' T';
-        return `<div class="shopping-list-row">
-          <div class="row"><strong>${escapeHtml(f.name)}</strong>
-          <span class="${f.daysLeft <= 3 ? 'confidence-low' : ''}">${when}</span></div>
-          <div class="small">alle ca. ${f.everyDays} Tage · ${f.purchases}× gekauft · zuletzt ${formatDate(f.lastDate)}</div>
-        </div>`;
-      }).join('') || 'Noch zu wenig Daten (mindestens 3 Kauftage pro Produkt).';
-
-    document.getElementById('insightsSavings').innerHTML =
-      (d.savings || []).map(s => `<div class="shopping-list-row">
-        <div class="row"><strong>${escapeHtml(s.name)}</strong>
-        <strong>${money(s.potential)}</strong></div>
-        <div class="small">am günstigsten: ${escapeHtml(s.cheapestStore)} (${money(s.cheapestPrice)}) ·
-        am teuersten: ${escapeHtml(s.worstStore)} (${money(s.worstPrice)}, +${Math.round(s.diffPct)} %)</div>
-      </div>`).join('') || 'Noch keine Produkte, die in mehreren Märkten gekauft wurden.';
-  }).withFailureHandler(e => {
-    document.getElementById('insightsForecast').textContent = e.message || String(e);
-  }).getInsights();
-}
-
-
-// ================================================================
-// ESSENSPLAN
-// ================================================================
-let mealData = {dishes: [], plan: [], courses: [], diets: [], units: [], aisles: []};
-let newDishDraft = null;
-let lastSuggestions = [];
-let mealListItems = [];
-let mealIdCounter = 0;
-
-function mealError(id) {
-  return e => showMessage(id, e.message || String(e), 'error');
-}
-
-function loadMeals() {
-  google.script.run
-    .withSuccessHandler(d => {
-      mealData = d;
-      renderMealPicker();
-      renderMealPlan();
-      renderChips();
-    })
-    .withFailureHandler(mealError('mealStatus'))
-    .getMealData();
-}
-
-function dishById(id) {
-  return mealData.dishes.find(d => d.id === id);
-}
-
-function renderMealPicker() {
-  const list = [...mealData.dishes].sort((a, b) => a.name.localeCompare(b.name, 'de'));
-  document.getElementById('mealPick').innerHTML = list.map(d =>
-    `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)} (${escapeHtml(d.category)})</option>`
-  ).join('') || '<option value="">Noch keine Gerichte gespeichert</option>';
-}
-
-function persistPlan() {
-  google.script.run.withFailureHandler(mealError('mealStatus')).savePlan(mealData.plan);
-}
-
-function addMealToPlan(dishId) {
-  const id = dishId || document.getElementById('mealPick').value;
-  const persons = Math.max(1, Math.round(Number(document.getElementById('mealPersons').value) || 1));
-  if (!id || !dishById(id)) return;
-  mealData.plan.push({id: 'p' + Date.now() + '_' + (mealIdCounter++), dishId: id, persons: persons});
-  renderMealPlan();
-  persistPlan();
-  showMessage('mealStatus', 'Zur Planung hinzugefügt.', 'ok');
-}
-
-function renderMealPlan() {
-  document.getElementById('mealPlan').innerHTML = mealData.plan.map((p, i) => {
-    const d = dishById(p.dishId);
-    if (!d) return '';
-    return `<div class="shopping-list-row">
-      <div class="row"><strong>${escapeHtml(d.name)}</strong>
-        <button class="danger" type="button" style="padding:6px 10px" onclick="removeMeal(${i})">✕</button></div>
-      <div class="row small"><span>Personen</span>
-        <input type="number" min="1" max="30" value="${p.persons}" style="width:80px;padding:8px"
-               onchange="changePersons(${i}, this.value)"></div>
-    </div>`;
-  }).join('') || '<div class="small">Noch nichts geplant.</div>';
-}
-
-function removeMeal(i) {
-  mealData.plan.splice(i, 1);
-  renderMealPlan();
-  persistPlan();
-}
-
-function changePersons(i, v) {
-  mealData.plan[i].persons = Math.max(1, Math.round(Number(v) || 1));
-  persistPlan();
-}
-
-// ----- Einkaufsliste -----
-function checkedSet() {
-  try { return new Set(JSON.parse(localStorage.getItem('hb_meal_checked') || '[]')); }
-  catch (e) { return new Set(); }
-}
-
-function saveChecked(set) {
-  try { localStorage.setItem('hb_meal_checked', JSON.stringify([...set])); } catch (e) {}
-}
-
-function makeShoppingList() {
-  if (!mealData.plan.length) {
-    showMessage('mealStatus', 'Bitte zuerst Gerichte zur Planung hinzufügen.', 'error');
-    return;
-  }
-  const btn = document.getElementById('mealListButton');
-  const reset = () => { btn.disabled = false; btn.textContent = 'Einkaufsliste erstellen'; };
-  btn.disabled = true;
-  btn.textContent = 'Liste wird erstellt …';
-  showMessage('mealStatus', '', '');
-
-  google.script.run
-    .withSuccessHandler(() => {
-      google.script.run
-        .withSuccessHandler(res => {
-          saveChecked(new Set());
-          renderMealList(res);
-          if (res.aiError) {
-            showMessage('mealStatus', 'Liste erstellt. Die Resttipps waren gerade nicht verfügbar.', 'ok');
-          }
-          reset();
-        })
-        .withFailureHandler(e => { mealError('mealStatus')(e); reset(); })
-        .buildShoppingList({tips: document.getElementById('mealTips').checked});
-    })
-    .withFailureHandler(e => { mealError('mealStatus')(e); reset(); })
-    .savePlan(mealData.plan);
-}
-
-function renderMealList(res) {
-  mealListItems = res.items || [];
-  const checked = checkedSet();
-  let html = '';
-  let lastAisle = '';
-  mealListItems.forEach((it, i) => {
-    if (it.aisle !== lastAisle) {
-      html += `<div class="label" style="margin-top:14px">${escapeHtml(it.aisle)}</div>`;
-      lastAisle = it.aisle;
-    }
-    const done = checked.has(it.key);
-    html += `<div class="shopping-list-row">
-      <label style="display:flex;gap:10px;align-items:flex-start;margin:0;font-weight:400">
-        <input type="checkbox" style="width:auto;margin-top:3px" ${done ? 'checked' : ''}
-               onchange="toggleListItem(${i}, this.checked)">
-        <span style="flex:1;${done ? 'text-decoration:line-through;opacity:.55' : ''}">
-          <strong>${escapeHtml(it.name)}</strong> · ${escapeHtml(it.buyText)}
-          <div class="small">benötigt ${escapeHtml(it.needText)} für ${escapeHtml(it.dishes.join(', '))}</div>
-          ${it.leftoverText ? `<div class="small">Rest: ${escapeHtml(it.leftoverText)}${it.tip ? ' – ' + escapeHtml(it.tip) : ''}</div>` : ''}
-        </span>
-      </label>
-    </div>`;
-  });
-  document.getElementById('mealList').innerHTML = html || '<div class="small">Keine Zutaten.</div>';
-  document.getElementById('mealListCard').style.display = 'block';
-}
-
-function toggleListItem(i, on) {
-  const set = checkedSet();
-  const key = mealListItems[i].key;
-  if (on) set.add(key); else set.delete(key);
-  saveChecked(set);
-  renderMealList({items: mealListItems});
-}
-
-function copyMealList() {
-  const checked = checkedSet();
-  const text = mealListItems
-    .filter(it => !checked.has(it.key))
-    .map(it => '- ' + it.name + ': ' + it.buyText)
-    .join(String.fromCharCode(10));
-  if (!navigator.clipboard) {
-    showMessage('mealStatus', 'Kopieren wird hier nicht unterstützt.', 'error');
-    return;
-  }
-  navigator.clipboard.writeText(text).then(
-    () => showMessage('mealStatus', 'Liste kopiert.', 'ok'),
-    () => showMessage('mealStatus', 'Kopieren war nicht möglich.', 'error')
-  );
-}
-
-// ----- Vorschläge mit Filtern -----
-function renderChips() {
-  const chip = (group, v) =>
-    `<label class="chip"><input type="checkbox" data-group="${group}" value="${escapeHtml(v)}"> ${escapeHtml(v)}</label>`;
-  const c = document.getElementById('chipCourses');
-  const d = document.getElementById('chipDiets');
-  if (!c.innerHTML) c.innerHTML = mealData.courses.map(v => chip('course', v)).join('');
-  if (!d.innerHTML) d.innerHTML = mealData.diets.map(v => chip('diet', v)).join('');
-}
-
-function selectedChips(group) {
-  return [...document.querySelectorAll('input[data-group=' + group + ']:checked')].map(x => x.value);
-}
-
-function showOwnDishes() {
-  const c = selectedChips('course');
-  const df = selectedChips('diet');
-  lastSuggestions = mealData.dishes
-    .filter(d => (!c.length || c.includes(d.category)) && (!df.length || df.includes(d.diet)))
-    .map(d => ({kind: 'own', id: d.id, name: d.name, description: d.category + ' · ' + d.diet}));
-  renderSuggestions();
-}
-
-function suggestAI() {
-  const btn = document.getElementById('suggestButton');
-  const reset = () => { btn.disabled = false; btn.textContent = 'Neue Ideen (KI)'; };
-  btn.disabled = true;
-  btn.textContent = 'Suche …';
-  showMessage('suggestStatus', '', '');
-  google.script.run
-    .withSuccessHandler(list => {
-      lastSuggestions = (list || []).map(s => ({
-        kind: 'ai', name: s.name,
-        description: s.description + ' (' + s.category + ', ' + s.diet + ')'
-      }));
-      renderSuggestions();
-      reset();
-    })
-    .withFailureHandler(e => { mealError('suggestStatus')(e); reset(); })
-    .suggestDishes({
-      courses: selectedChips('course'),
-      diets: selectedChips('diet'),
-      wish: document.getElementById('suggestWish').value.trim()
-    });
-}
-
-function renderSuggestions() {
-  document.getElementById('suggestList').innerHTML = lastSuggestions.map((s, i) => `
-    <div class="shopping-list-row">
-      <strong>${escapeHtml(s.name)}</strong>
-      <div class="small">${escapeHtml(s.description)}</div>
-      <div class="actions">${s.kind === 'own'
-        ? `<button class="secondary" type="button" onclick="addMealToPlan('${escapeHtml(s.id)}')">Planen</button>
-           <button class="danger" type="button" onclick="removeDish('${escapeHtml(s.id)}')">Löschen</button>`
-        : `<button class="secondary" type="button" onclick="useSuggestion(${i})">Zutaten erstellen</button>`}
-      </div>
-    </div>`).join('') || '<div class="small">Nichts gefunden.</div>';
-}
-
-function useSuggestion(i) {
-  createDishDraft(lastSuggestions[i].name);
-  document.getElementById('newDishName').scrollIntoView({behavior: 'smooth', block: 'center'});
-}
-
-function removeDish(id) {
-  if (!confirm('Gericht wirklich löschen?')) return;
-  google.script.run
-    .withSuccessHandler(() => {
-      mealData.plan = mealData.plan.filter(p => p.dishId !== id);
-      lastSuggestions = lastSuggestions.filter(s => s.id !== id);
-      renderSuggestions();
-      loadMeals();
-    })
-    .withFailureHandler(mealError('suggestStatus'))
-    .deleteDish(id);
-}
-
-// ----- Neues Gericht -----
-function createDishDraft(prefillName) {
-  if (prefillName) document.getElementById('newDishName').value = prefillName;
-  const name = document.getElementById('newDishName').value.trim();
-  const portions = Math.max(1, Math.round(Number(document.getElementById('newDishPortions').value) || 4));
-  if (!name) { showMessage('newDishStatus', 'Bitte ein Gericht eingeben.', 'error'); return; }
-  const btn = document.getElementById('newDishButton');
-  const reset = () => { btn.disabled = false; btn.textContent = 'Zutaten per KI erstellen'; };
-  btn.disabled = true;
-  btn.textContent = 'Zutaten werden erstellt …';
-  google.script.run
-    .withSuccessHandler(d => {
-      newDishDraft = {name: name, portions: portions, category: d.category, diet: d.diet, ingredients: d.ingredients || []};
-      renderDishDraft();
-      showMessage('newDishStatus', 'Bitte Zutaten und Mengen prüfen.', 'ok');
-      reset();
-    })
-    .withFailureHandler(e => { mealError('newDishStatus')(e); reset(); })
-    .generateDish(name, portions);
-}
-
-function renderDishDraft() {
-  const d = newDishDraft;
-  const opt = (arr, sel) => arr.map(x => `<option ${x === sel ? 'selected' : ''}>${escapeHtml(x)}</option>`).join('');
-  const host = document.getElementById('newDishReview');
-  host.style.display = 'block';
-  host.innerHTML = `
-    <div class="grid">
-      <div><label>Kategorie</label><select id="draftCategory">${opt(mealData.courses, d.category)}</select></div>
-      <div><label>Ernährung</label><select id="draftDiet">${opt(mealData.diets, d.diet)}</select></div>
-    </div>
-    <div id="draftRows">${d.ingredients.map((i, n) => `
-      <div class="shopping-item" data-n="${n}">
-        <input class="item-name" data-f="name" value="${escapeHtml(i.name)}" aria-label="Zutat">
-        <input data-f="amount" type="number" min="0" step="any" value="${Number(i.amount)}" aria-label="Menge">
-        <select data-f="unit">${opt(mealData.units, i.unit)}</select>
-        <button class="remove-item" type="button" onclick="removeDraftRow(${n})">Entfernen</button>
-      </div>`).join('')}</div>
-    <button class="full secondary" type="button" onclick="addDraftRow()">＋ Zutat</button>
-    <button class="full" type="button" style="margin-top:9px" onclick="saveDishDraft()">Gericht speichern</button>`;
-}
-
-function readDraftRows() {
-  return [...document.querySelectorAll('#draftRows .shopping-item')].map(row => {
-    const old = newDishDraft.ingredients[Number(row.dataset.n)] || {};
-    return {
-      name: row.querySelector('[data-f=name]').value.trim(),
-      amount: Number(row.querySelector('[data-f=amount]').value) || 0,
-      unit: row.querySelector('[data-f=unit]').value,
-      aisle: old.aisle || 'Sonstiges'
-    };
-  });
-}
-
-function syncDraft() {
-  newDishDraft.ingredients = readDraftRows();
-  newDishDraft.category = document.getElementById('draftCategory').value;
-  newDishDraft.diet = document.getElementById('draftDiet').value;
-}
-
-function removeDraftRow(n) {
-  syncDraft();
-  newDishDraft.ingredients.splice(n, 1);
-  renderDishDraft();
-}
-
-function addDraftRow() {
-  syncDraft();
-  newDishDraft.ingredients.push({name: '', amount: 1, unit: 'g', aisle: 'Sonstiges'});
-  renderDishDraft();
-}
-
-function saveDishDraft() {
-  syncDraft();
-  const d = newDishDraft;
-  google.script.run
-    .withSuccessHandler(() => {
-      showMessage('newDishStatus', 'Gericht gespeichert.', 'ok');
-      document.getElementById('newDishReview').style.display = 'none';
-      document.getElementById('newDishName').value = '';
-      newDishDraft = null;
-      loadMeals();
-    })
-    .withFailureHandler(mealError('newDishStatus'))
-    .saveDish({name: d.name, portions: d.portions, category: d.category, diet: d.diet, ingredients: d.ingredients});
-}
-
-
-// APP STARTEN
-initialize();
-
-</script>
-
-</body>
-</html>
