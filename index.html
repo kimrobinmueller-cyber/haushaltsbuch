@@ -422,7 +422,7 @@ nav span {
 <main>
 
 <!-- DASHBOARD -->
-<section id="dashboard" class="page active">
+<section id="dashboard" class="page">
 
   <div class="row" style="margin:5px 0 14px">
     <strong>Monatsübersicht</strong>
@@ -517,6 +517,46 @@ nav span {
     <div id="recent"></div>
   </div>
 
+</section>
+
+<!-- BELEGERFASSUNG -->
+<section id="receipt" class="page active">
+  <h2>Beleg erfassen</h2>
+  <p class="shopping-intro">Kassenbon fotografieren und die erkannten Produkte und Preise kontrollieren.</p>
+  <div class="card">
+    <strong>Kassenbon fotografieren</strong>
+    <p class="shopping-intro">Foto hochladen. Gemini liest Supermarkt, Datum, Produkte und Preise aus. Bitte decke vorher Kartendaten, Kundenkartennummern und andere persönliche Angaben auf dem Bon ab.</p>
+    <label for="shoppingPhoto">Kassenbon-Foto (JPG, PNG oder WebP)</label>
+    <input type="file" id="shoppingPhoto" accept="image/jpeg,image/png,image/webp" capture="environment">
+    <label style="display:flex;align-items:flex-start;gap:8px;margin-top:12px">
+      <input type="checkbox" id="receiptPrivacyConfirm" style="width:auto;margin:2px 0 0">
+      <span class="small">Ich habe sensible Angaben auf dem Foto vorher abgedeckt.</span>
+    </label>
+    <div id="shoppingStatus" class="status"></div>
+    <button class="full" id="analyzeReceiptButton" type="button" onclick="analyzeShoppingReceipt()">Kassenbon automatisch auslesen</button>
+  </div>
+
+  <div class="card" id="shoppingReview" style="display:none">
+    <div class="row"><strong>Ergebnis kontrollieren</strong><span class="small" id="shoppingModelLabel"></span></div>
+    <label>Supermarkt</label>
+    <input id="shoppingStore" placeholder="z. B. Aldi Süd">
+    <label>Filiale / Ort (optional)</label>
+    <input id="shoppingBranch" placeholder="z. B. Köngen">
+    <div class="grid">
+      <div><label>Einkaufsdatum</label><input type="date" id="shoppingDate"></div>
+      <div><label>Erfasst von</label><select id="shoppingPerson"><option>Kim</option><option>Julia</option><option>Gemeinsam</option></select></div>
+    </div>
+    <label>Bezahlte Gesamtsumme (€)</label>
+    <input type="number" id="shoppingTotal" min="0.01" step="0.01" inputmode="decimal">
+    <div class="shopping-summary"><strong>Erkannte Produkte</strong><strong id="shoppingItemCount">0</strong></div>
+    <div id="shoppingItems"></div>
+    <button class="full secondary" type="button" onclick="addShoppingItem()">＋ Produkt ergänzen</button>
+    <div class="shopping-summary"><span>Summe der Produktpositionen</span><strong id="shoppingItemsTotal">0,00 €</strong></div>
+    <input type="hidden" id="shoppingReceiptUrl">
+    <div id="shoppingSaveStatus" class="status"></div>
+    <button class="full" id="saveShoppingButton" type="button" onclick="saveShopping()">Einkauf bestätigen und speichern</button>
+  </div>
+  <button class="full secondary" type="button" onclick="newExpense()" style="margin-bottom:14px">＋ Ausgabe manuell erfassen</button>
 </section>
 
 <!-- ERFASSEN -->
@@ -621,43 +661,7 @@ nav span {
 
 <!-- EINKAUFSOPTIMIERUNG -->
 <section id="shopping" class="page">
-  <h2>Einkaufsoptimierung</h2>
-
-  <button class="full secondary" type="button" onclick="showPage('meals')" style="margin-bottom:14px">🍽 Essensplan &amp; Einkaufsliste</button>
-
-  <div class="card">
-    <strong>Kassenbon fotografieren</strong>
-    <p class="shopping-intro">Foto hochladen. Gemini liest Supermarkt, Datum, Produkte und Preise aus. Bitte decke vorher Kartendaten, Kundenkartennummern und andere persönliche Angaben auf dem Bon ab.</p>
-    <label for="shoppingPhoto">Kassenbon-Foto (JPG, PNG oder WebP)</label>
-    <input type="file" id="shoppingPhoto" accept="image/jpeg,image/png,image/webp" capture="environment">
-    <label style="display:flex;align-items:flex-start;gap:8px;margin-top:12px">
-      <input type="checkbox" id="receiptPrivacyConfirm" style="width:auto;margin:2px 0 0">
-      <span class="small">Ich habe sensible Angaben auf dem Foto vorher abgedeckt.</span>
-    </label>
-    <div id="shoppingStatus" class="status"></div>
-    <button class="full" id="analyzeReceiptButton" type="button" onclick="analyzeShoppingReceipt()">Kassenbon automatisch auslesen</button>
-  </div>
-
-  <div class="card" id="shoppingReview" style="display:none">
-    <div class="row"><strong>Ergebnis kontrollieren</strong><span class="small" id="shoppingModelLabel"></span></div>
-    <label>Supermarkt</label>
-    <input id="shoppingStore" placeholder="z. B. Aldi Süd">
-    <label>Filiale / Ort (optional)</label>
-    <input id="shoppingBranch" placeholder="z. B. Köngen">
-    <div class="grid">
-      <div><label>Einkaufsdatum</label><input type="date" id="shoppingDate"></div>
-      <div><label>Erfasst von</label><select id="shoppingPerson"><option>Kim</option><option>Julia</option><option>Gemeinsam</option></select></div>
-    </div>
-    <label>Bezahlte Gesamtsumme (€)</label>
-    <input type="number" id="shoppingTotal" min="0.01" step="0.01" inputmode="decimal">
-    <div class="shopping-summary"><strong>Erkannte Produkte</strong><strong id="shoppingItemCount">0</strong></div>
-    <div id="shoppingItems"></div>
-    <button class="full secondary" type="button" onclick="addShoppingItem()">＋ Produkt ergänzen</button>
-    <div class="shopping-summary"><span>Summe der Produktpositionen</span><strong id="shoppingItemsTotal">0,00 €</strong></div>
-    <input type="hidden" id="shoppingReceiptUrl">
-    <div id="shoppingSaveStatus" class="status"></div>
-    <button class="full" id="saveShoppingButton" type="button" onclick="saveShopping()">Einkauf bestätigen und speichern</button>
-  </div>
+  <h2>Einkaufsliste &amp; Sparen</h2>
 
   <div class="card">
     <strong>Dieser Monat</strong>
@@ -681,13 +685,9 @@ nav span {
     <strong>Sparpotenzial nach Markt</strong>
     <div id="insightsSavings" class="small">Wird geladen …</div>
   </div>
-</section>
-
-
-<!-- ESSENSPLAN -->
-<section id="meals" class="page">
-  <button class="secondary" type="button" onclick="showPage('shopping')">← Einkäufe</button>
-  <h2>Essensplan</h2>
+<!-- EINKAUFSPLANUNG -->
+<div class="card">
+  <h2 style="margin-top:0">Essensplanung & Einkaufsliste</h2>
 
   <div class="card">
     <strong>Geplante Gerichte</strong>
@@ -736,7 +736,9 @@ nav span {
     <button class="full" id="newDishButton" type="button" style="margin-top:12px" onclick="createDishDraft()">Zutaten per KI erstellen</button>
     <div id="newDishReview" style="display:none"></div>
   </div>
+</div>
 </section>
+
 
 <!-- STATISTIK -->
 <section id="statistics" class="page">
@@ -755,6 +757,12 @@ nav span {
     <strong>Jahresübersicht</strong>
     <div id="yearTotal" class="big">0,00 €</div>
     <div id="yearCategories"></div>
+  </div>
+
+
+  <div class="card">
+    <strong>Letzte Einkäufe</strong>
+    <div id="shoppingHistoryStats" class="small">Wird geladen …</div>
   </div>
 </section>
 
@@ -786,32 +794,19 @@ nav span {
 
 <!-- NAVIGATION -->
 <nav>
-  <button class="active" data-page="dashboard"
-          onclick="showPage('dashboard')">
-    <span>⌂</span>Übersicht
+  <button class="active" data-page="receipt" onclick="showPage('receipt')">
+    <span>📷</span>Erfassung
   </button>
-
-  <button data-page="entry" onclick="newExpense()">
-    <span>＋</span>Erfassen
+  <button data-page="statistics" onclick="showPage('statistics')">
+    <span>◔</span>Statistiken
   </button>
-
-  <button data-page="transactions"
-          onclick="showPage('transactions')">
+  <button data-page="shopping" onclick="showPage('shopping')">
+    <span>🛒</span>Einkauf
+  </button>
+  <button data-page="transactions" onclick="showPage('transactions')">
     <span>▤</span>Buchungen
   </button>
-
-
-  <button data-page="shopping" onclick="showPage('shopping')">
-    <span>🛒</span>Einkäufe
-  </button>
-
-  <button data-page="statistics"
-          onclick="showPage('statistics')">
-    <span>◔</span>Statistik
-  </button>
-
-  <button data-page="settings"
-          onclick="showPage('settings')">
+  <button data-page="settings" onclick="showPage('settings')">
     <span>⚙</span>Einstellungen
   </button>
 </nav>
@@ -941,9 +936,8 @@ function showPage(page) {
     });
 
   if(page==='transactions') renderTransactions();
-  if(page==='statistics') renderStatistics();
-  if(page==='shopping') { loadShoppingData(); loadInsights(); }
-  if(page==='meals') loadMeals();
+  if(page==='statistics') { renderStatistics(); loadShoppingData(); }
+  if(page==='shopping') { loadShoppingData(); loadInsights(); loadMeals(); }
   if(page==='settings' && appData) {
     document.getElementById('budgetInput').value =
       Number(appData.budget || 0).toFixed(2);
@@ -1679,12 +1673,15 @@ function loadShoppingData() {
     document.getElementById('shoppingFoodTotal').textContent = money(data.foodTotal);
     document.getElementById('shoppingHouseholdTotal').textContent = money(data.householdTotal);
     document.getElementById('shoppingItemCountMonth').textContent = String(data.itemCount || 0);
-    document.getElementById('shoppingHistory').innerHTML = (data.purchases || []).map(p => `
+    const historyHtml = (data.purchases || []).map(p => `
       <div class="shopping-list-row">
         <div class="row"><strong>${escapeHtml(p.store)}</strong><strong>${money(p.total)}</strong></div>
         <div class="small">${formatDate(p.date)} · ${escapeHtml(p.person)}${p.branch ? ' · '+escapeHtml(p.branch) : ''}</div>
         ${p.receiptUrl ? `<a href="${escapeHtml(p.receiptUrl)}" target="_blank" rel="noopener">Kassenbon in Google Drive öffnen</a>` : ''}
       </div>`).join('') || 'Noch keine Einkäufe erfasst.';
+    document.getElementById('shoppingHistory').innerHTML = historyHtml;
+    const statsHistory = document.getElementById('shoppingHistoryStats');
+    if (statsHistory) statsHistory.innerHTML = historyHtml;
   }).withFailureHandler(error => showMessage('shoppingStatus',error.message || String(error),'error')).getShoppingData();
 }
 
