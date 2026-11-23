@@ -175,33 +175,34 @@ function generateAiMealRecipes(options) {
   options = options || {};
   const props = PropertiesService.getScriptProperties();
   const apiKey = props.getProperty('GEMINI_API_KEY');
-  if (!apiKey) throw new Error('Die KI ist noch nicht eingerichtet. Bitte im Apps-Script-Projekt unter Projekteinstellungen → Script Properties den Schlüssel GEMINI_API_KEY hinterlegen.');
+  if (!apiKey) throw new Error('Die bestehende Gemini-Verbindung ist nicht eingerichtet: Script Property GEMINI_API_KEY fehlt.');
   const mode = options.mode === 'week' ? 'week' : 'single';
   const servings = Math.max(1, Math.min(10, Number(options.servings) || 4));
   const dayIndex = Math.max(0, Math.min(6, Number(options.dayIndex) || 0));
   const mealType = ['Frühstück','Mittagessen','Abendessen'].includes(String(options.mealType)) ? String(options.mealType) : 'Abendessen';
   const preferences = String(options.preferences || '').replace(/[<>]/g,' ').slice(0,500);
   const start = mealIsoDate_(options.weekStart || mealMonday_(new Date()));
+  // Dieselben Script Properties und derselbe GenerateContent-Endpunkt wie bei der vorhandenen Belegerkennung.
   const model = props.getProperty('GEMINI_MODEL') || 'gemini-3.8-flash';
-  const recipeSchema = {
-    type:'object',
+  const schema = {
+    type:'OBJECT',
     properties:{
-      recipes:{type:'array',items:{
-        type:'object',
+      recipes:{type:'ARRAY',items:{
+        type:'OBJECT',
         properties:{
-          title:{type:'string'},
-          dayIndex:{type:'integer'},
-          mealType:{type:'string',enum:['Frühstück','Mittagessen','Abendessen']},
-          servings:{type:'integer'},
-          prepMinutes:{type:'integer'},
-          estimatedCostEur:{type:'number'},
-          category:{type:'string'},
-          cuisine:{type:'string'},
-          tags:{type:'string'},
-          ingredients:{type:'array',items:{type:'object',properties:{
-            name:{type:'string'},amount:{type:'number'},unit:{type:'string'}
+          title:{type:'STRING'},
+          dayIndex:{type:'INTEGER'},
+          mealType:{type:'STRING',enum:['Frühstück','Mittagessen','Abendessen']},
+          servings:{type:'INTEGER'},
+          prepMinutes:{type:'INTEGER'},
+          estimatedCostEur:{type:'NUMBER'},
+          category:{type:'STRING'},
+          cuisine:{type:'STRING'},
+          tags:{type:'STRING'},
+          ingredients:{type:'ARRAY',items:{type:'OBJECT',properties:{
+            name:{type:'STRING'},amount:{type:'NUMBER'},unit:{type:'STRING'}
           },required:['name','amount','unit']}},
-          instructions:{type:'string'}
+          instructions:{type:'STRING'}
         },
         required:['title','dayIndex','mealType','servings','prepMinutes','estimatedCostEur','category','cuisine','tags','ingredients','instructions']
       }}
@@ -215,81 +216,76 @@ function generateAiMealRecipes(options) {
     prompt = 'Erstelle genau 3 unterschiedliche, realistische und gut nachkochbare Rezeptvorschläge für '+mealType+' am '+['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'][dayIndex]+' in Deutschland. Alle Rezepte für '+servings+' Portionen. Wünsche: '+(preferences || 'preiswert, familienfreundlich und alltagstauglich')+'. Schreibe auf Deutsch. Verwende abwechslungsreiche, möglichst preiswerte Zutaten. Zutaten müssen einzeln mit plausiblen numerischen Mengen und metrischen Einheiten angegeben werden (g, kg, ml, l, Stück, EL, TL oder Prise); keine Mengen als Freitext. Schätze die gesamten Zutatenkosten je Rezept in Euro für alle angegebenen Portionen. prepMinutes ist eine realistische Zubereitungszeit. Setze bei allen drei Rezepten dayIndex auf '+dayIndex+' und mealType auf "'+mealType+'". Anleitungen in kurzen, klaren Schritten als Text. Gib ausschließlich das verlangte JSON zurück.';
   }
   const payload = {
-    model:model,
-    store:false,
-    generation_config:{max_output_tokens:12000,thinking_level:"low"},
-    input:prompt,
-    response_format:{type:'text',mime_type:'application/json',schema:recipeSchema}
+    contents:[{role:'user',parts:[{text:prompt}]}],
+    generationConfig:{
+      responseMimeType:'application/json',
+      responseSchema:schema,
+      maxOutputTokens:12000
+    }
   };
-  const response = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/interactions',{
-    method:'post',
-    contentType:'application/json',
-    headers:{'x-goog-api-key':apiKey},
-    payload:JSON.stringify(payload),
-    muteHttpExceptions:true
-  });
-  const status = response.getResponseCode();
-  const body = response.getContentText();
-  if (status < 200 || status >= 300) {
-    let detail = body;
-    try { const parsed = JSON.parse(body); detail = parsed.error && parsed.error.message ? parsed.error.message : body; } catch(e) {}
+  const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(apiKey);
+  let response, status, body;
+  for (let attempt=0; attempt<3; attempt++) {
+    response=UrlFetchApp.fetch(url,{
+      method:'post',contentType:'application/json',payload:JSON.stringify(payload),muteHttpExceptions:true
+    });
+    status=response.getResponseCode();
+    body=response.getContentText();
+    if (status!==429 && status!==500 && status!==503 && status!==504) break;
+    if (attempt<2) Utilities.sleep(attempt===0?2000:5000);
+  }
+  if (status<200 || status>=300) {
+    let detail=body;
+    try { const parsed=JSON.parse(body); detail=parsed.error&&parsed.error.message?parsed.error.message:body; } catch(e) {}
     throw new Error('Gemini API Fehler (HTTP '+status+'): '+String(detail).slice(0,500));
   }
-  const result = JSON.parse(body);
-  let outputText = result.output_text || '';
-  if (!outputText && Array.isArray(result.steps)) {
-    result.steps.forEach(step => {
-      if (step.type === 'model_output' && Array.isArray(step.content)) {
-        step.content.forEach(part => { if (part.type === 'text') outputText += part.text || ''; });
-      }
-    });
-  }
-  if (!outputText) throw new Error('Die KI hat keine Rezeptdaten zurückgegeben.');
+  const result=JSON.parse(body);
+  const parts=result.candidates&&result.candidates[0]&&result.candidates[0].content&&result.candidates[0].content.parts;
+  const outputText=Array.isArray(parts)?parts.map(p=>p.text||'').join(''):'';
+  if (!outputText) throw new Error('Gemini hat keine Rezeptdaten zurückgegeben. Bitte erneut versuchen.');
   let generated;
-  try { generated = JSON.parse(outputText); } catch(e) { throw new Error('Die KI-Antwort war kein gültiges JSON. Bitte erneut versuchen.'); }
-  if (!generated || !Array.isArray(generated.recipes)) throw new Error('Die KI-Antwort enthält keine Rezeptliste.');
-  const expected = mode === 'week' ? 21 : 3;
-  if (generated.recipes.length !== expected) throw new Error('Die KI hat '+generated.recipes.length+' statt '+expected+' Rezepten erstellt. Bitte erneut versuchen.');
-  const normalized = generated.recipes.map((r,i) => {
-    const title = String(r.title || '').trim().slice(0,120);
+  try { generated=JSON.parse(outputText); } catch(e) { throw new Error('Die Gemini-Antwort war kein gültiges JSON. Bitte erneut versuchen.'); }
+  if (!generated || !Array.isArray(generated.recipes)) throw new Error('Die Gemini-Antwort enthält keine Rezeptliste.');
+  const expected=mode==='week'?21:3;
+  if (generated.recipes.length!==expected) throw new Error('Gemini hat '+generated.recipes.length+' statt '+expected+' Rezepten erstellt. Bitte erneut versuchen.');
+  const normalized=generated.recipes.map(r=>{
+    const title=String(r.title||'').trim().slice(0,120);
     if (!title || !Array.isArray(r.ingredients) || !r.ingredients.length) throw new Error('Ein KI-Rezept ist unvollständig.');
-    const day = Math.max(0,Math.min(6,Number(r.dayIndex)||0));
-    const type = ['Frühstück','Mittagessen','Abendessen'].includes(r.mealType) ? r.mealType : mealType;
-    const ingredients = r.ingredients.slice(0,40).map(x => {
-      const amount = Number(x.amount);
-      const name = String(x.name||'').trim().slice(0,100);
-      const unit = String(x.unit||'').trim().slice(0,20);
-      if (!name || !Number.isFinite(amount) || amount < 0) throw new Error('Eine Zutat hat eine ungültige Mengenangabe.');
-      return {name:name,amount:amount,unit:unit};
+    const day=Math.max(0,Math.min(6,Number(r.dayIndex)||0));
+    const type=['Frühstück','Mittagessen','Abendessen'].includes(r.mealType)?r.mealType:mealType;
+    const ingredients=r.ingredients.slice(0,40).map(x=>{
+      const amount=Number(x.amount), name=String(x.name||'').trim().slice(0,100), unit=String(x.unit||'').trim().slice(0,20);
+      if (!name || !Number.isFinite(amount) || amount<0) throw new Error('Eine Zutat hat eine ungültige Mengenangabe.');
+      return {name,amount,unit};
     });
     return {
-      id:Utilities.getUuid(),title:title,dayIndex:day,mealType:type,servings:Math.max(1,Math.min(10,Number(r.servings)||servings)),
+      id:Utilities.getUuid(),title,dayIndex:day,mealType:type,
+      servings:Math.max(1,Math.min(10,Number(r.servings)||servings)),
       prepMinutes:Math.max(1,Math.min(300,Number(r.prepMinutes)||30)),
       estimatedCostEur:Math.max(0,Math.min(300,Number(r.estimatedCostEur)||0)),
-      category:type,cuisine:String(r.cuisine||'').slice(0,60),tags:'KI, '+String(r.tags||'').slice(0,120),
-      ingredients:ingredients,instructions:String(r.instructions||'').slice(0,5000)
+      category:type,cuisine:String(r.cuisine||'').slice(0,60),
+      tags:'KI, '+String(r.tags||'').slice(0,120),ingredients,
+      instructions:String(r.instructions||'').slice(0,5000)
     };
   });
-  if (mode === 'week') {
-    const slots = normalized.map(r=>r.dayIndex+'|'+r.mealType);
-    const expectedSlots = [];
-    for (let d=0;d<7;d++) ['Frühstück','Mittagessen','Abendessen'].forEach(t=>expectedSlots.push(d+'|'+t));
-    if (new Set(slots).size !== 21 || expectedSlots.some(s=>!slots.includes(s))) throw new Error('Der KI-Wochenplan enthält doppelte oder fehlende Mahlzeiten. Bitte erneut versuchen.');
-  } else if (normalized.some(r=>r.dayIndex!==dayIndex || r.mealType!==mealType)) {
-    throw new Error('Die KI hat Mahlzeiten außerhalb der ausgewählten Auswahl erstellt. Bitte erneut versuchen.');
+  if (mode==='week') {
+    const slots=normalized.map(r=>r.dayIndex+'|'+r.mealType), expectedSlots=[];
+    for(let d=0;d<7;d++) ['Frühstück','Mittagessen','Abendessen'].forEach(t=>expectedSlots.push(d+'|'+t));
+    if(new Set(slots).size!==21 || expectedSlots.some(s=>!slots.includes(s))) throw new Error('Der KI-Wochenplan enthält doppelte oder fehlende Mahlzeiten. Bitte erneut versuchen.');
+  } else if(normalized.some(r=>r.dayIndex!==dayIndex || r.mealType!==mealType)) {
+    throw new Error('Gemini hat Mahlzeiten außerhalb der ausgewählten Auswahl erstellt. Bitte erneut versuchen.');
   }
   setupMealPlannerTables_();
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(MEAL_CONFIG.RECIPES);
-  const now = new Date();
-  const rows = normalized.map(r=>[
-    r.id,r.title,r.category,r.cuisine,'','KI (Gemini)','',JSON.stringify(r.ingredients),r.instructions,r.servings,now,now,r.tags,
+  const sh=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(MEAL_CONFIG.RECIPES);
+  const now=new Date();
+  const rows=normalized.map(r=>[
+    r.id,r.title,r.category,r.cuisine,'','KI (Gemini)','',JSON.stringify(r.ingredients),
+    r.instructions,r.servings,now,now,r.tags,
     'KI-Entwurf · ca. '+r.prepMinutes+' Min. · geschätzte Zutatenkosten: '+r.estimatedCostEur.toFixed(2)+' €'
   ]);
   sh.getRange(sh.getLastRow()+1,1,rows.length,14).setValues(rows);
-  return {mode:mode,weekStart:start,recipes:normalized};
+  return {mode,weekStart:start,recipes:normalized};
 }
-
-/** Gemeinsame, geräteübergreifende Häkchen für den Wocheneinkauf. */
 function getMealShoppingChecklist(weekStart) {
   setupMealPlannerTables_();
   const start = mealIsoDate_(weekStart);
